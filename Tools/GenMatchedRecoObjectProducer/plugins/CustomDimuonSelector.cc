@@ -58,10 +58,10 @@ private:
   // ----------member data ---------------------------
 
   //input tag for base reco muon collection
-  edm::EDGetTokenT<reco::MuonCollection> baseMuonTag_;
+  edm::EDGetTokenT<edm::View<pat::Muon> > baseMuonTag_;
 
   //input tag for reco muon collection
-  edm::EDGetTokenT<reco::MuonRefVector> muonTag_;
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_;
 
   //muon ID to apply
   double isoMax_;
@@ -86,14 +86,14 @@ private:
 // constructors and destructor
 //
 CustomDimuonSelector::CustomDimuonSelector(const edm::ParameterSet& iConfig) :
-  baseMuonTag_(consumes<reco::MuonCollection>(iConfig.getParameter<edm::InputTag>("baseMuonTag"))),
-  muonTag_(consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("muonTag"))),
+  baseMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("baseMuonTag"))),
+  muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
   isoMax_(iConfig.getParameter<double>("isoMax")),
   isoMin_(iConfig.getParameter<double>("isoMin")),
   particleFlow_(consumes<reco::PFCandidateCollection>(iConfig.getParameter<edm::InputTag>("particleFlow"))),
   minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter"))
 {
-  produces<reco::MuonRefVector>();
+  produces<std::vector<pat::Muon> >();
 }
 
 
@@ -114,26 +114,26 @@ CustomDimuonSelector::~CustomDimuonSelector()
 bool CustomDimuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   //create pointer to output collection
-  std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
+  std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
   //get base muons
-  edm::Handle<reco::MuonCollection> pBaseMuons;
+  edm::Handle<edm::View<pat::Muon> > pBaseMuons;
   iEvent.getByToken(baseMuonTag_, pBaseMuons);
 
   //get muons
-  edm::Handle<reco::MuonRefVector> pMuons;
+  edm::Handle<edm::View<pat::Muon> > pMuons;
   iEvent.getByToken(muonTag_, pMuons);
 
   edm::Handle<reco::PFCandidateCollection> pPFCandidates;
   iEvent.getByToken(particleFlow_, pPFCandidates);
 
 
-  std::vector<reco::MuonRef> muons;
-  muons = Common::getIsolatedRecoMuons(pMuons, pBaseMuons, pPFCandidates, isoMax_, isoMin_); 
+  std::vector<pat::Muon> muons;
+  muons = Common::getIsolatedPATMuons(pMuons, pBaseMuons, pPFCandidates, isoMax_, isoMin_); 
 
   //fill output collection
   unsigned int nPassingMuons = 0;
-  for (std::vector<reco::MuonRef>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); 
+  for (std::vector<pat::Muon>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); 
        ++iMuon) {
       muonColl->push_back(*iMuon);
       ++nPassingMuons;

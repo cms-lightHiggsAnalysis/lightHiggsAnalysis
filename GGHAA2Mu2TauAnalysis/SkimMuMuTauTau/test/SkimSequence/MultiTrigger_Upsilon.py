@@ -54,7 +54,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True),
                 SkipEvent = cms.untracked.vstring('ProductNotFound'))
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 #process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*mylist))
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
 
@@ -540,11 +540,11 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.TriggerSelector
 )
 
-process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector*
-                                           process.PFTau*
-                                           process.pfBTagging*
-					   process.muHadTauSelector*
-                                           process.muHadIsoTauSelector
+process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector#*
+                                           #process.PFTau*
+                                           #process.pfBTagging*
+					   #process.muHadTauSelector*
+                                           #process.muHadIsoTauSelector
 )
 
 

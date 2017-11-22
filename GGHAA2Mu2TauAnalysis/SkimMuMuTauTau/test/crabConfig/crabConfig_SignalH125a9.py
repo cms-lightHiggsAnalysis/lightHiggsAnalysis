@@ -1,7 +1,7 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName = 'SignalH125a9_NoIsoDiTau_JUL19'
+config.General.requestName = 'SignalH125a9_SignalRegion_SEP18_lumiTree'
 config.General.workArea = 'crab_projects'
 config.General.transferOutputs = True
 config.General.transferLogs = True
@@ -16,6 +16,6 @@ config.Data.unitsPerJob = 39
 config.Data.totalUnits = 3000000
 config.Data.outLFNDirBase = '/store/group/phys_higgs/HiggsExo/ktos'
 config.Data.publication = True
-config.Data.outputDatasetTag = 'SignalH125a9_NoIsoDiTau_JUL19'
+config.Data.outputDatasetTag = 'SignalH125a9_SignalRegion_SEP18_lumiTree'
 
 config.Site.storageSite = 'T2_CH_CERN'

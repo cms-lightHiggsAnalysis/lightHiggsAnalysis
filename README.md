@@ -8,9 +8,9 @@ This analysis repository is a search for a light higgs particle could potentiall
 
 cd ~
 
-cmsrel CMSSW_8_0_17
+cmsrel CMSSW_8_0_30
 
-cd CMSSW_8_0_17/src
+cd CMSSW_8_0_30/src
 
 cmsenv
 
@@ -32,9 +32,9 @@ mkdir ~/Tau
 
 cd ~/Tau
 
-cmsrel CMSSW_8_0_17
+cmsrel CMSSW_8_0_30
 
-cd CMSSW_8_0_17/src
+cd CMSSW_8_0_30/src
 
 cmsenv
 
@@ -46,17 +46,19 @@ git cms-addpkg DataFormats/JetReco
 
 git cms-addpkg DataFormats/TauReco
 
-cp -r DataFormats ~/CMSSW_8_0_17/src
+git cms-addpkg DataFormats/PatCandidates
 
-cd ~/CMSSW_8_0_17/src/DataFormats
+cp -r DataFormats ~/CMSSW_8_0_30/src
 
-cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_17/src/DataFormats/HepMCCandidate/src/classes* HepMCCandidate/src
+cd ~/CMSSW_8_0_30/src/DataFormats
 
-cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_17/src/DataFormats/JetReco/src/classes* JetReco/src
+cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_30/src/DataFormats/HepMCCandidate/src/classes* HepMCCandidate/src
 
-cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_17/src/DataFormats/MuonReco/src/classes* MuonReco/src
+cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_30/src/DataFormats/JetReco/src/classes* JetReco/src
 
-cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_17/src/DataFormats/TauReco/src/classes* TauReco/src
+cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_30/src/DataFormats/MuonReco/src/classes* MuonReco/src
+
+cp /afs/cern.ch/work/m/mshi/public/CMSSW_8_0_30/src/DataFormats/TauReco/src/classes* TauReco/src
 
 
 rm -rf ~/Tau
@@ -186,15 +188,15 @@ package has a separate readme https://github.com/MengyaoShi/lightHiggsAnalysis/b
 
 ## Workflow
 
-a) In path_to_your_folder/CMSSW_8_0_17/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
+a) In path_to_your_folder/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
 
-b) In path_to_your_folder/CMSSW_8_0_17/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
+b) In path_to_your_folder/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
 
-c) cd path_to_your_folder/CMSSW_8_0_17/src/CollectEXO/ 
+c) cd path_to_your_folder/CMSSW_8_0_30/src/CollectEXO/ 
 
 mkdir AllRootFiles
 
-Use path_to_your_folder/CMSSW_8_0_17/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
+Use path_to_your_folder/CMSSW_8_0_30/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
 
 It will look like, in CollectEXO/AllRootFiles
 
@@ -250,10 +252,10 @@ root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/TTJets_TuneCUETP8M1_
 
 170416_022149 is the crab submission job number.
 
-d) In /CMSSW_8_0_17/src/GGHAA2Mu2TauAnalysis/QCDBackground, there is a Summary.sh
+d) In /CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/QCDBackground, there is a Summary.sh
 
 ./Summary.sh, you will submit analysis of each background/signal in lxplus. Since we want plot on same physics measurement, for example pt of highest pt muon, missing energy, and so on, we run similar code on different backgrounds/signals, I wrote a template named test_skimmed.py that be fed into Summary.sh, and copy this python file 10 times and change a bit according to which backgrounds we analyze. In the end of Summary.sh, it submit jobs with all modified versions of analysis template using 'bsub', and start to analyze all backgrounds and signals. Wait until you get .root files, use "bjobs" to check status.
 
 .root files will contains histograms. Modify test_skimmed.py to include new plots.
 
-e) In StandardPlotFormat I use several simple scripts to stack all backgrounds together and compare with signal. Notice this is a temporary solution. In /CMSSW_8_0_17/src/GGHAA2Mu2TauAnalysis/Plotting/test as mentioned in above sections, it's a non-temporary solution that's under development. 
+e) In StandardPlotFormat I use several simple scripts to stack all backgrounds together and compare with signal. Notice this is a temporary solution. In /CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/Plotting/test as mentioned in above sections, it's a non-temporary solution that's under development. 

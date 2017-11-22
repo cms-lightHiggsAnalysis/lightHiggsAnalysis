@@ -54,9 +54,23 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True),
                 SkipEvent = cms.untracked.vstring('ProductNotFound'))
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*mylist))
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
+
+
+process.ProfilerService = cms.Service (
+      "ProfilerService",
+       firstEvent = cms.untracked.int32(2),
+       lastEvent = cms.untracked.int32(500),
+       paths = cms.untracked.vstring('p')
+)
+
+process.SimpleMemoryCheck = cms.Service(
+    "SimpleMemoryCheck",
+    ignoreTotal = cms.untracked.int32(1)
+)
+
 
 process.source.inputCommands = cms.untracked.vstring("keep *")
 
@@ -212,6 +226,12 @@ process.btagging = cms.Sequence(
 
 #require event to fire IsoMu24_eta2p1
 process.TriggerAnalyzer0=cms.EDAnalyzer("TriggerAnalyzer")
+
+
+process.lumiTree = cms.EDAnalyzer("LumiTree",
+    genEventInfo = cms.InputTag("generator"),
+)
+
 process.MuonIWant = cms.EDFilter('MuonRefSelector',
                                  src = cms.InputTag('muons'),
                                  cut = cms.string('pt > 0.0'),
@@ -223,7 +243,7 @@ process.HighestPtAndMuonSignDRSelector=cms.EDFilter(
                 muonTag=cms.InputTag('MuonIWant'),
                 dRCut=cms.double(1.5),
                 Mu2PtCut=cms.double(15.0),
-                oppositeSign = cms.bool(False), # False for SameSignDiMu, True regular
+                oppositeSign = cms.bool(True), # False for SameSignDiMu, True regular
                 passdR = cms.bool(True)   # False for SeparatedDiMu, True regular
 )
 
@@ -233,7 +253,7 @@ process.Mu1Mu2PtRankMuonID=cms.EDFilter(
   vtxTag= cms.InputTag('offlinePrimaryVertices'),
   muon1ID=cms.string('medium'),
   muon2ID=cms.string('medium'),# tightNew is another option
-  oppositeSign = cms.int32(1) # 1 for SameSignDiMu, -1 for regular
+  oppositeSign = cms.int32(-1) # 1 for SameSignDiMu, -1 for regular
 )
 
 process.InvMassCut=cms.EDFilter('Mu1Mu2MassFilter',
@@ -296,6 +316,31 @@ process.TriggerSelector = cms.EDFilter(
                                    ),
     theRightHLTSubFilters = cms.VInputTag(cms.InputTag("hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q","","HLT"),
                                           cms.InputTag("hltL3fL1sMu25f0TkFiltered50Q", "", "HLT"),
+                                          ),
+    HLTSubFilters = cms.untracked.VInputTag(""),
+    minNumObjsToPassFilter1= cms.uint32(1),
+    outFileName=cms.string("TriggerSelector.root")
+)
+
+process.TriggerSelectorDoubleMu = cms.EDFilter(
+    'MuonTriggerObjectFilter_MultiTrig',
+    recoObjTag = cms.InputTag('PtEtaCut'),
+    genParticleTag = cms.InputTag('genParticles'),
+    triggerEventTag = cms.untracked.InputTag("hltTriggerSummaryAOD", "", "HLT"),
+    triggerResultsTag = cms.untracked.InputTag("TriggerResults", "", "HLT"),
+    MatchCut = cms.untracked.double(0.01),
+    hltTags = cms.VInputTag(cms.InputTag("HLT_Mu50_v", "", "HLT"),
+                            cms.InputTag("HLT_TkMu50_v", "", "HLT"),
+                            cms.InputTag("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v"), 
+                            cms.InputTag("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v")
+                            ),
+    theRightHLTTags = cms.VInputTag(cms.InputTag("HLT_Mu50_v3","","HLT"),
+                                   cms.InputTag("HLT_TkMu50_v1", "", "HLT")
+                                   ),
+    theRightHLTSubFilters = cms.VInputTag(cms.InputTag("hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q","","HLT"),
+                                          cms.InputTag("hltL3fL1sMu25f0TkFiltered50Q", "", "HLT"),
+                                          cms.InputTag("hltDiMuonGlb17Glb8RelTrkIsoFiltered0p4", "", "HLT"), # hltL3fL1sDoubleMu114L1f0L2f10OneMuL3Filtered17
+                                          cms.InputTag("hltDiMuonGlb17Trk8RelTrkIsoFiltered0p4", "", "HLT")  # hltL3fL1sDoubleMu114L1f0L2f10L3Filtered17
                                           ),
     HLTSubFilters = cms.untracked.VInputTag(""),
     minNumObjsToPassFilter1= cms.uint32(1),
@@ -370,7 +415,7 @@ process.Mu1Mu2MassSelection=cms.EDFilter(
 
 #clean the jets of soft muons, then rebuild the taus
 
-process.CleanJets.muonSrc=cms.InputTag('tauMuonPtSelectorNoReq') # 
+process.CleanJets.muonSrc=cms.InputTag('tauMuonPtSelector') # 
 process.CleanJets.PFCandSrc = cms.InputTag('particleFlow')
 process.CleanJets.cutOnGenMatches = cms.bool(False)
 process.CleanJets.outFileName = cms.string('CleanJets.root')
@@ -380,9 +425,9 @@ process.ak4PFJetsLegacyHPSPiZeros.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsN
 process.ak4PFJetsRecoTauChargedHadrons.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
 process.combinatoricRecoTaus.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
 
-process.recoTauCommonSequence = cms.Sequence(   process.Mu3NoReq*
-						process.Mu3IDNoReq*
-						process.tauMuonPtSelectorNoReq*
+process.recoTauCommonSequence = cms.Sequence(   process.Mu3*
+						process.Mu3ID*
+						process.tauMuonPtSelector*
 						process.CleanJets*
 						process.ak4PFJetTracksAssociatorAtVertex*
 						process.recoTauAK4PFJets08Region*
@@ -476,7 +521,7 @@ process.muHadIsoTauSelector = cms.EDFilter(
     muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
     overlapCandTag = cms.InputTag('TriggerSelector','','SKIM'),
     overlapCandTag1=cms.InputTag('Mu1Mu2EtaCut','','SKIM'),
-    passDiscriminator = cms.bool(False),  # False for NoIsoDiTau, True regular
+    passDiscriminator = cms.bool(True),  # False for NoIsoDiTau, True regular
     pTMin=cms.double(10.0),
     etaMax = cms.double(2.4),
     isoMax = cms.double(-1.0),
@@ -488,6 +533,7 @@ process.muHadIsoTauSelector = cms.EDFilter(
 #sequences
 process.MuMuSequenceSelector=cms.Sequence(
 #       process.TriggerAnalyzer0*
+        process.lumiTree*
 	process.MuonIWant*
         process.HighestPtAndMuonSignDRSelector*
 	process.Mu1Mu2PtRankMuonID*
