@@ -26,14 +26,31 @@ echo "" >> $FILENAME
 crab submit crabConfig_DoubleMu1.py >> $FILENAME
 echo "" >> $FILENAME
 crab submit crabConfig_DoubleMu2.py >> $FILENAME
-
 echo "DATA DONE"
 
 echo "" >> $FILENAME
 crab submit crabConfig_DYHighMass.py >> $FILENAME
 echo "" >> $FILENAME
 crab submit crabConfig_DYLowMass.py >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_JPsi.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_Upsilon.py   >> $FILENAME
+echo "DY Done"
 
-
-
-
+crab submit crabConfig_VV.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_WJ2L2Nu.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_WJAmac.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_WJMadG.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_ZZTo2L2Nu.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_ZZTo2L2Q.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_ZZTo4LAmac.py  >> $FILENAME
+echo "" >> $FILENAME
+crab submit crabConfig_ZZTo4LPowh.py  >> $FILENAME
+echo "" >> $FILENAME

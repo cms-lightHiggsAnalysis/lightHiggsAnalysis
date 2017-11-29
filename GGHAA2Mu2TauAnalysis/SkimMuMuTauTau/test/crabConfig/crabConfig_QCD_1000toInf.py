@@ -1,7 +1,7 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName = 'QCD_1000toInf_MiniAOD_DiMu_TauDM_NOV16'
+config.General.requestName = 'MiniAOD_QCD_1000toInf_MiniAOD_DiMu_TauDMMedIso_NOV27'
 config.General.workArea = 'crab_projects'
 config.General.transferOutputs = True
 config.General.transferLogs = True
@@ -15,6 +15,6 @@ config.Data.splitting = 'FileBased'
 config.Data.unitsPerJob = 10
 config.Data.outLFNDirBase = '/store/group/phys_higgs/HiggsExo/ktos'
 config.Data.publication = True
-config.Data.outputDatasetTag = 'QCD_1000toInf_MiniAOD_DiMu_TauDM_NOV16'
+config.Data.outputDatasetTag = 'MiniAOD_QCD_1000toInf_MiniAOD_DiMu_TauDMMedIso_NOV27'
 
 config.Site.storageSite = 'T2_CH_CERN'

@@ -22,19 +22,23 @@
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDFilter.h"
+#include "FWCore/Framework/interface/stream/EDFilter.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/Utilities/interface/StreamID.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+
+#include "DataFormats/PatCandidates/interface/Muon.h"
 //
 //
 // class declaration
@@ -58,7 +62,7 @@ class PTETACUT : public edm::EDFilter {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
- edm::EDGetTokenT<edm::RefVector<std::vector<reco::Muon> > > muonTag_;
+ edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_;
  unsigned int minNumObjsToPassFilter_;
  double Eta_;
  double Pt_;
@@ -76,14 +80,14 @@ class PTETACUT : public edm::EDFilter {
 // constructors and destructor
 //
 PTETACUT::PTETACUT(const edm::ParameterSet& iConfig):
- muonTag_(consumes<edm::RefVector<std::vector<reco::Muon> > >(iConfig.getParameter<edm::InputTag>("muonTag"))),
+ muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
  minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter")),
  Eta_(iConfig.getParameter<double>("Eta")),
  Pt_(iConfig.getParameter<double>("Pt"))
 {
 
    //now do what ever initialization is needed
-   produces<reco::MuonRefVector>();
+   produces<std::vector<pat::Muon> >();
 }
 
 
@@ -106,14 +110,12 @@ PTETACUT::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
   unsigned int nPassingMuons=0;
-  edm::Handle<edm::RefVector<std::vector<reco::Muon> > > recoObjs;
+  edm::Handle<edm::View<pat::Muon> > recoObjs;
   iEvent.getByToken(muonTag_, recoObjs);
-  std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
-  for (typename edm::RefVector<std::vector<reco::Muon> >::const_iterator iRecoObj =
-       recoObjs->begin(); iRecoObj != recoObjs->end();
-       ++iRecoObj) 
+  std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
+  for (edm::View<pat::Muon>::const_iterator iRecoObj = recoObjs->begin(); iRecoObj != recoObjs->end();  ++iRecoObj) 
   {
-    if((fabs((*iRecoObj)->eta())<Eta_ ||(Eta_==-1))&& (*iRecoObj)->pt()>Pt_)
+    if( (fabs(iRecoObj->eta())<Eta_ || Eta_==-1) && iRecoObj->pt()>Pt_)
     {
       muonColl->push_back(*iRecoObj);
       nPassingMuons++;

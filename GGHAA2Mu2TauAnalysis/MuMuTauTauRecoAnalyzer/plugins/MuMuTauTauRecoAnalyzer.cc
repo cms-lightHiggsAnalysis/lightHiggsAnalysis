@@ -278,10 +278,8 @@ MuMuTauTauRecoAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
   std::vector<reco::PFTauRef> pTSortedTaus;
   int NJets =pPFJets->size();
   std::cout<<"NJets="<<NJets<<std::endl;
-  for(reco::PFJetCollection::const_iterator iJet=pPFJets->begin(); iJet != pPFJets->end(); ++ iJet)
-  { 
-    double JetPt=iJet->pt();
-  }
+//  for(reco::PFJetCollection::const_iterator iJet=pPFJets->begin(); iJet != pPFJets->end(); ++ iJet)
+//    double JetPt=iJet->pt();
   for (reco::PFTauRefVector::const_iterator iTau = pTaus->begin(); iTau != pTaus->end(); 
        ++iTau) { pTSortedTaus.push_back(*iTau); }
   std::vector<reco::PFTauRef> taus = pTSortedTaus;
