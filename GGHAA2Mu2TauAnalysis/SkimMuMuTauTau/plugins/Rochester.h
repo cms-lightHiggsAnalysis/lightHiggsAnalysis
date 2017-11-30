@@ -25,6 +25,10 @@
 #include "CLHEP/Random/RandomEngine.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/PATObject.h"
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
+
 using namespace edm;
 using namespace std;
 using namespace reco;
@@ -39,7 +43,7 @@ class Rochester : public edm::EDProducer {
   virtual void produce(edm::Event&, const edm::EventSetup&);
 
   bool isData;	
-  edm::EDGetTokenT<edm::View<reco::Muon> > muonLabel;
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonLabel;
   string iName;
   RoccoR rc;
   edm::FileInPath RochesterDir_;
