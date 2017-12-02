@@ -2,8 +2,9 @@ import FWCore.ParameterSet.Config as cms
 from subprocess import *
 import FWCore.Utilities.FileUtils as FileUtils
 from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import *
-mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/DYHigh_raw.txt')
-process = cms.Process("SKIM")
+#mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/DYMini.txt')
+mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/AllRootFiles/TTBar.txt')
+process = cms.Process("MINIAODSKIM")
 #Debug utils
 #process.ProfilerService = cms.Service (
 #      "ProfilerService",
@@ -197,6 +198,8 @@ process.ak4JetTracksAssociatorAtVertex.tracks = cms.InputTag("generalTracks")
 
 process.lumiTree = cms.EDAnalyzer("LumiTree",
     genEventInfo = cms.InputTag("generator"),
+    nevents = cms.InputTag('lumiSummary','numberOfEvents'),
+    summedWeights = cms.InputTag('lumiSummary','sumOfWeightedEvents')
 )	
 process.btagging = cms.Sequence(
     process.ak4JetTracksAssociatorAtVertex*
@@ -250,19 +253,18 @@ process.RandomNumberGeneratorService = cms.Service(
 )
 
 process.RochesterCorr=cms.EDProducer("Rochester",
-    muonCollection = cms.InputTag("muons"),
+    muonCollection = cms.InputTag("slimmedMuons"),
     identifier = cms.string("DATA_80X_13TeV"),
     isData         = cms.bool(False),
     initialSeed = cms.untracked.uint32(89),
     engineName = cms.untracked.string('TRandom3'),
     fp=cms.FileInPath("Rochester/RochesterSub/data/rcdata.2016.v3/config.txt")
 )
-
-MU_CUT=("pt>5.0 && abs(eta)<2.4")
-process.PreMuons = cms.EDFilter('MuonRefSelector',
-                                 src = cms.InputTag("RochesterCorr","RochesterMu","SKIM"),
-                                 cut = cms.string(MU_CUT),
-                                 filter = cms.bool(True)
+process.PreMuons = cms.EDFilter('PTETACUT',
+            muonTag=cms.InputTag("RochesterCorr","RochesterMu"),
+            Eta=cms.double(2.4),
+            Pt=cms.double(5.0),
+            minNumObjsToPassFilter=cms.uint32(2)
 )
 
 process.Mu45Selector = cms.EDFilter(
@@ -285,14 +287,13 @@ process.Mu45Selector = cms.EDFilter(
 process.AllPreMuonsID=cms.EDFilter(
   'MuonsID',
   muonTag=cms.InputTag('PreMuons'),
-  vtxTag= cms.InputTag('offlinePrimaryVertices'),
   muonID=cms.string('medium')
 )
 process.Isolate=cms.EDFilter('CustomDimuonSelector',
                                 muonTag=cms.InputTag('AllPreMuonsID'),
                                 isoMax=cms.double(0.25),
                                 isoMin=cms.double(0.0),
-                                baseMuonTag=cms.InputTag('muons'),
+                                baseMuonTag=cms.InputTag('slimmedMuons'),
                                 particleFlow=cms.InputTag('particleFlow'),
                                 minNumObjsToPassFilter=cms.uint32(2)
 )
@@ -489,14 +490,14 @@ process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
 )
 process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   'Mu1Mu2Analyzer',
-  Mu1Mu2=cms.InputTag("MassCut",'','SKIM'),
+  Mu1Mu2=cms.InputTag("MassCut",'','MINIAODSKIM'),
   Mu2PtBins=cms.vdouble(x for x in range(0, 200)),
   invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(True),
-  pfMet=cms.InputTag("pfMet","","RECO"),
+  pfMet=cms.InputTag("slimmedMETs"),
   fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileupWeightForEraC.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
-  Generator=cms.InputTag("generator","","SIM")
+  Generator=cms.InputTag("generator","","MINIAODSIM")
 )
 process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
 #sequences
@@ -509,8 +510,7 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.AllPreMuonsID*
         process.HighestPtAndMuonSignDRSelector*
         process.MassCut*
-        process.Mu1Mu2Analyzer*
-        process.GetRunNumber
+        process.Mu1Mu2Analyzer
 )
 
 process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector
