@@ -302,8 +302,8 @@ process.HighestPtAndMuonSignDRSelector=cms.EDFilter(
                 muonTag=cms.InputTag('AllPreMuonsID'),
                 dRCut=cms.double(-1),
                 passdR=cms.bool(True),
-                Mu1PtCut=cms.double(20.0),
-                Mu2PtCut=cms.double(20.0),
+                Mu1PtCut=cms.double(25.0),
+                Mu2PtCut=cms.double(10.0),
                 oppositeSign = cms.bool(True) # False for SameSignDiMu, True regular
 )
 
@@ -495,7 +495,7 @@ process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(True),
   pfMet=cms.InputTag("slimmedMETs"),
-  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileupWeightForEraC.root"),
+  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileup.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
   Generator=cms.InputTag("generator","","MINIAODSIM")
 )
