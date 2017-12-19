@@ -1,0 +1,1 @@
+hadd ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1_8ddVersion2.root root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1_8ddVersion2/171215_232724/0000/TFileDYZ_1.root

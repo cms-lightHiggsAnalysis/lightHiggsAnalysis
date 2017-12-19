@@ -1,0 +1,1 @@
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/ZZTo4L_13TeV-amcatnloFXFX-pythia8/ZZTo4L_13TeV-amcatnloFXFX-pythia8_8ddVersion2/171215_233428/0000/TFileDYZ_1.root
