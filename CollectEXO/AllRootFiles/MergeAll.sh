@@ -4,12 +4,13 @@ for i in "${myArray[@]}"
     TXTName=${i}
     Name="${TXTName%%.*}"
     echo $Name
-    prefix="Hadd "$Name".root"
+    prefix="hadd "$Name".root"
     echo $prefix
-    sed -i ':a;N;$!ba;s/\n/\t/g' ${i}
-    sed "s/^/$prefix /" $i >tmp
-    mv tmp $i
     SHName=$Name".sh"
-    cp $i  $SHName
-    chmod 777 $SHName
+    cp ./SUB/$i  ./SHFiles/$SHName
+    sed -i ':a;N;$!ba;s/\n/ /g' ./SHFiles/$SHName
+    sed "s/^/$prefix /" ./SHFiles/$SHName >tmp
+    mv tmp ./SHFiles/$SHName
+    chmod 777 ./SHFiles/$SHName
+    source ./SHFiles/$SHName
   done
