@@ -1,0 +1,1 @@
+hadd ZZTo2L2Nu_13TeV_powheg_pythia8_8ddVersion2.root root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/ZZTo2L2Nu_13TeV_powheg_pythia8/ZZTo2L2Nu_13TeV_powheg_pythia8_8ddVersion2/171215_233358/0000/TFileDYZ_3.root

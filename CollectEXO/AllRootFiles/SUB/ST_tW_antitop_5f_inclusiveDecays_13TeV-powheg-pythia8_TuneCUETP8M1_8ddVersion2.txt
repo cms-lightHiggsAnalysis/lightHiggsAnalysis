@@ -1,0 +1,2 @@
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2/171215_232953/0000/TFileDYZ_1.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2/171215_232953/0000/TFileDYZ_2.root

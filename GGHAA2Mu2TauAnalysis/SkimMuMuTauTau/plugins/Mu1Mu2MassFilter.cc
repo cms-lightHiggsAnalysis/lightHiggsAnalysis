@@ -37,6 +37,8 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+
+#include "DataFormats/PatCandidates/interface/Muon.h"
 //
 // class declaration
 //
@@ -59,7 +61,7 @@ class Mu1Mu2MassFilter : public edm::stream::EDFilter<> {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
-      edm::EDGetTokenT<edm::RefVector<std::vector<reco::Muon>>> Mu1Mu2_;
+      edm::EDGetTokenT<edm::View<pat::Muon> > Mu1Mu2_;
       double minMass_;
       double maxMass_;
 };
@@ -77,12 +79,12 @@ class Mu1Mu2MassFilter : public edm::stream::EDFilter<> {
 // constructors and destructor
 //
 Mu1Mu2MassFilter::Mu1Mu2MassFilter(const edm::ParameterSet& iConfig):
-  Mu1Mu2_(consumes<edm::RefVector<std::vector<reco::Muon>>>(iConfig.getParameter<edm::InputTag>("Mu1Mu2"))),
+  Mu1Mu2_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("Mu1Mu2"))),
   minMass_(iConfig.getParameter<double>("minMass")),
   maxMass_(iConfig.getParameter<double>("maxMass"))
 {
    //now do what ever initialization is needed
-    produces<reco::MuonRefVector>();
+    produces<std::vector<pat::Muon> >();
 }
 
 
@@ -105,25 +107,22 @@ Mu1Mu2MassFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
-   edm::Handle<edm::RefVector<std::vector<reco::Muon>>> pMu1Mu2;
+   edm::Handle<edm::View<pat::Muon> > pMu1Mu2;
    iEvent.getByToken(Mu1Mu2_, pMu1Mu2);
    double invMass=0;
-   invMass=((*pMu1Mu2)[0]->p4()+(*pMu1Mu2)[1]->p4()).M();
+   invMass=((*pMu1Mu2)[0].p4()+(*pMu1Mu2)[1].p4()).M();
 
    if((invMass <= minMass_ && minMass_!=-1)||(maxMass_!=-1 && invMass>=maxMass_))
       return false;
-   else{
-      std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
-  
-     for (reco::MuonRefVector::const_iterator iMuon = pMu1Mu2->begin(); iMuon != pMu1Mu2->end();
-       ++iMuon) {
-      muonColl->push_back(*iMuon);
-
-     }
+   else
+   {
+     std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
+     for (edm::View<pat::Muon>::const_iterator iMuon = pMu1Mu2->begin(); iMuon != pMu1Mu2->end(); ++iMuon)
+       muonColl->push_back(*iMuon);
      iEvent.put(muonColl);
      return true;
-   }
-}
+   }//else
+}//Mu1Mu2MassFilter::filter
 
 // ------------ method called once each stream before processing any runs, lumis or events  ------------
 void

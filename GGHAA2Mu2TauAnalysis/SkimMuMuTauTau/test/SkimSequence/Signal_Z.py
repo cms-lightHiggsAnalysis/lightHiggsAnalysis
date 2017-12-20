@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 from subprocess import *
 import FWCore.Utilities.FileUtils as FileUtils
-mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/SignalH125a05.txt')
+mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/test.txt')
 process = cms.Process("SKIM")
 #Debug utils
 #process.ProfilerService = cms.Service (
@@ -85,7 +85,7 @@ process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("RecoTauTag.Configuration.RecoPFTauTag_cff")
 #process.load("RecoTauTag.RecoTau.RecoTauPiZeroProducer_cfi")
 process.load('Tools/CleanJets/cleanjets_cfi')
-
+process.load('Configuration.StandardSequences.Services_cff')
 #define a parameter set to be passed to all modules that utilize GenTauDecayID for signal taus
 AMuMuPSet = cms.PSet(momPDGID = cms.vint32(A_PDGID),
                                    chargedHadronPTMin = cms.double(0.0),
@@ -222,8 +222,9 @@ process.btagging = cms.Sequence(
 process.TriggerAnalyzer0=cms.EDAnalyzer("TriggerAnalyzer")
 process.HLTEle =cms.EDFilter("HLTHighLevel",
      TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
-     HLTPaths = cms.vstring("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*" ),
+     #HLTPaths = cms.vstring("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*" ),
      #HLTPaths = cms.vstring("HLT_Mu7p5_Track7_Upsilon_v*", "HLT_Mu7p5_Track3p5_Upsilon_v*","HLT_Mu7p5_Track2_Upsilon_v*", "HLT_Mu7p5_L2Mu2_Upsilon_v*","HLT_Dimuon8_Upsilon_Barrel_v*","HLT_Dimuon13_Upsilon_v*","HLT_Dimuon0_Upsilon_Muon_v*" ),
+     HLTPaths = cms.vstring("HLT_IsoMu24_v*","HLT_IsoTkMu24_v*"),
      eventSetupPathsKey = cms.string(''),
      andOr = cms.bool(True), #----- True = OR, False = AND between the HLTPaths
      throw = cms.bool(False) # throw exception on unknown path names
@@ -233,9 +234,25 @@ process.hTozzTo4leptonsMuonCalibrator = cms.EDProducer("HZZ4LeptonsMuonCalibrato
     identifier = cms.string("DATA_80X_13TeV"),
     isData         = cms.bool(True)
 )
+process.RandomNumberGeneratorService = cms.Service(
+    "RandomNumberGeneratorService",
+    RochesterCorr = cms.PSet(
+        initialSeed = cms.untracked.uint32(3),
+        engineName = cms.untracked.string('TRandom3')
+    ),
+)
+
+process.RochesterCorr=cms.EDProducer("Rochester",
+    muonCollection = cms.InputTag("muons"),
+    identifier = cms.string("DATA_80X_13TeV"),
+    isData         = cms.bool(True),
+    initialSeed = cms.untracked.uint32(89),
+    engineName = cms.untracked.string('TRandom3'),
+    fp=cms.FileInPath("Rochester/RochesterSub/data/rcdata.2016.v3/config.txt")
+)   
 MU_CUT=("pt>5.0 && abs(eta)<2.4")
 process.PreMuons = cms.EDFilter('MuonRefSelector',
-                                 src = cms.InputTag("muons"),
+                                 src = cms.InputTag("RochesterCorr","RochesterMu","SKIM"),
                                  cut = cms.string(MU_CUT),
                                  filter = cms.bool(True)
 )
@@ -456,14 +473,14 @@ process.muHadNonIsoTauSelector = cms.EDFilter(
 )
 process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
                                     Mu1Mu2=cms.InputTag('HighestPtAndMuonSignDRSelector'),
-                                    minMass=cms.double(16.0),
-                                    maxMass=cms.double(22.0)
+                                    minMass=cms.double(60.0),
+                                    maxMass=cms.double(120.0)
 )
 process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   'Mu1Mu2Analyzer',
   Mu1Mu2=cms.InputTag("MassCut",'','SKIM'),
   Mu2PtBins=cms.vdouble(x for x in range(0, 200)),
-  invMassBins=cms.vdouble(x*0.01 for x in range(1600, 2200)),
+  invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(False),
   pfMet=cms.InputTag("pfMet","","RECO"),
   fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileupWeightForEraC.root"),
@@ -475,7 +492,7 @@ process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
 process.MuMuSequenceSelector=cms.Sequence(
         #process.TriggerAnalyzer0*
         process.HLTEle*
-        #process.hTozzTo4leptonsMuonCalibrator*
+        process.RochesterCorr*
         process.PreMuons*
         process.AllPreMuonsID*
         process.HighestPtAndMuonSignDRSelector*

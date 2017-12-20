@@ -35,6 +35,11 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/PATObject.h"
+#include "DataFormats/Candidate/interface/CompositePtrCandidate.h"
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
+
 //
 //
 // class declaration
@@ -58,7 +63,7 @@ class HighestPtAndMuonSignDRSelector : public edm::EDFilter {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
-  edm::EDGetTokenT<reco::MuonRefVector> muonTag_; 
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_; 
   double Cut_;
   double Mu1PtCut_;
   double Mu2PtCut_;
@@ -80,7 +85,7 @@ class HighestPtAndMuonSignDRSelector : public edm::EDFilter {
 // constructors and destructor
 //
 HighestPtAndMuonSignDRSelector::HighestPtAndMuonSignDRSelector(const edm::ParameterSet& iConfig):
-  muonTag_(consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("muonTag"))),
+  muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
   Cut_(iConfig.getParameter<double>("dRCut")),
   Mu1PtCut_(iConfig.getParameter<double>("Mu1PtCut")),
   Mu2PtCut_(iConfig.getParameter<double>("Mu2PtCut")),
@@ -89,7 +94,7 @@ HighestPtAndMuonSignDRSelector::HighestPtAndMuonSignDRSelector(const edm::Parame
   histos1D_()
 {
    //now do what ever initialization is needed
-   produces<reco::MuonRefVector>();
+   produces<std::vector<pat::Muon> >();
 }
 
 
@@ -112,24 +117,24 @@ HighestPtAndMuonSignDRSelector::filter(edm::Event& iEvent, const edm::EventSetup
 {
    using namespace edm;
    using namespace std;
-   edm::Handle<reco::MuonRefVector> pMuons;
+   edm::Handle<edm::View<pat::Muon> > pMuons;
    iEvent.getByToken(muonTag_, pMuons); 
 
    if( (pMuons->size()) <= 1)
      return 0;
-   std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
+   std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
    double max_=0.0;
-   reco::MuonRef maxMuon;
+   pat::Muon maxMuon;
    
-   reco::MuonRef secondMuon;
+   pat::Muon secondMuon;
    int count=0;
-   for(reco::MuonRefVector::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
+   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
    {
      count+=1;
-     if( ((*iMuon)->pt()) > max_)
+     if( (iMuon->pt()) > max_)
      {
-       max_=(*iMuon)->pt();
+       max_=iMuon->pt();
        maxMuon=(*iMuon);
      }
    }
@@ -137,16 +142,16 @@ HighestPtAndMuonSignDRSelector::filter(edm::Event& iEvent, const edm::EventSetup
     
    //Below is selecting highest pt muons's opposite sign partner. So that's only one pair.
    int CountSecondMuon=0;
-   reco::MuonRef tmpSecondMuon; 
-   for(reco::MuonRefVector::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
+   pat::Muon tmpSecondMuon; 
+   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
    {
      //cout<<"(*iMuon)->pt() ="<<(*iMuon)->pt()<<"; deltaR(**iMuon, *maxMuon)="<<deltaR(**iMuon, *maxMuon)<<"; sign ="<<((*iMuon)->pdgId() == (1)*((maxMuon)->pdgId()))<<std::endl;
      bool PtRequireMet=false;
      bool dRRequireMet=false;
      bool signRequireMet=false;
-     PtRequireMet=(*iMuon)->pt()<(maxMuon->pt()) && (*iMuon)->pt()> Mu2PtCut_ && (maxMuon->pt()>Mu1PtCut_);
-     dRRequireMet=(passdR_ && deltaR(**iMuon, *maxMuon)< Cut_) || (!passdR_ && deltaR(**iMuon, *maxMuon)> Cut_) || Cut_==-1;
-     signRequireMet=(oppositeSign_ && ((*iMuon)->pdgId()==(-1)*(maxMuon->pdgId()))) || (!oppositeSign_ && ((*iMuon)->pdgId()==maxMuon->pdgId()));
+     PtRequireMet=iMuon->pt()<(maxMuon.pt()) && iMuon->pt()> Mu2PtCut_ && (maxMuon.pt()>Mu1PtCut_);
+     dRRequireMet=(passdR_ && deltaR(*iMuon, maxMuon)< Cut_) || (!passdR_ && deltaR(*iMuon, maxMuon)> Cut_) || Cut_==-1;
+     signRequireMet=(oppositeSign_ && (iMuon->pdgId()==(-1)*(maxMuon.pdgId()))) || (!oppositeSign_ && (iMuon->pdgId()==maxMuon.pdgId()));
      if (PtRequireMet && dRRequireMet && signRequireMet)      
      {
        CountSecondMuon+=1; 
@@ -155,52 +160,47 @@ HighestPtAndMuonSignDRSelector::filter(edm::Event& iEvent, const edm::EventSetup
          continue;
        }
        tmpSecondMuon=(*iMuon);
-       if(tmpSecondMuon->pt()> secondMuon->pt()){
+       if(tmpSecondMuon.pt()> secondMuon.pt()){
          secondMuon=tmpSecondMuon;
 
        }
      }//if pt, dR, sign requirement
    }//for iMuon
   
-   if(secondMuon.isNull())
+   if(CountSecondMuon == 0)
    {
      return 0;
    }//if
    muonColl->push_back(secondMuon);
 
    //Start Debugging 
-   std::cout<<"Count of All muons pass medium ID="<<count<< std::endl;
-   cout<<"maxMuonPt="<<maxMuon->pt()<<std::endl;
    //Below is selecting all partners.
    double invMassMostClose=0.0;
-   for(reco::MuonRefVector::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end()-1; ++iMuon){
-     for(reco::MuonRefVector::const_iterator iMuon2=iMuon+1; iMuon2!=pMuons->end(); ++iMuon2){
-       double tmpInvMass=((*iMuon)->p4()+(*iMuon2)->p4()).M();
+   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end()-1; ++iMuon){
+     for(edm::View<pat::Muon>::const_iterator iMuon2=iMuon+1; iMuon2!=pMuons->end(); ++iMuon2){
+       double tmpInvMass=(iMuon->p4()+iMuon2->p4()).M();
        if(fabs(tmpInvMass-92.0)<fabs((invMassMostClose-92.0))){
          invMassMostClose=tmpInvMass;
        }
      }
    }
-   for(reco::MuonRefVector::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end()-1; ++iMuon){
-     for(reco::MuonRefVector::const_iterator iMuon2=iMuon+1; iMuon2!=pMuons->end(); ++iMuon2){
+   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end()-1; ++iMuon){
+     for(edm::View<pat::Muon>::const_iterator iMuon2=iMuon+1; iMuon2!=pMuons->end(); ++iMuon2){
        double invMass=0;
        bool containMaxPtMuon=false;
        bool containSecondMaxPtMuon=false;
        bool signRequireMet=false;
-       signRequireMet=(oppositeSign_ && ((*iMuon)->pdgId()==(-1)*((*iMuon2)->pdgId()))) || (!oppositeSign_ && ((*iMuon)->pdgId()==(*iMuon2)->pdgId()));
+       signRequireMet=(oppositeSign_ && (iMuon->pdgId()==(-1)*(iMuon2->pdgId()))) || (!oppositeSign_ && (iMuon->pdgId()==iMuon2->pdgId()));
        if( !signRequireMet){
          continue;
        }
-       invMass=((*iMuon)->p4()+(*iMuon2)->p4()).M();
-       std::cout<<invMass<<std::endl;
-       if(fabs( (*iMuon)->pt()-(maxMuon)->pt())<1e-6  ||  (fabs((maxMuon)->pt()-(*iMuon2)->pt())<1e-6)){
+       invMass=(iMuon->p4()+iMuon2->p4()).M();
+       if(fabs( iMuon->pt()-maxMuon.pt())<1e-6  ||  (fabs(maxMuon.pt()-iMuon2->pt())<1e-6)){
          containMaxPtMuon=true;
        }
-       if(fabs((*iMuon)->pt()-(secondMuon)->pt())<1e-6 || (fabs((secondMuon)->pt()-(*iMuon2)->pt())<1e-6)){
+       if(fabs(iMuon->pt()-secondMuon.pt())<1e-6 || (fabs(secondMuon.pt()-iMuon2->pt())<1e-6)){
          containSecondMaxPtMuon=true;
        }
-       std::cout<<"containMaxPtMuon="<<containMaxPtMuon<<std::endl;
-       std::cout<<"containSecondMaxPtMuon="<<containSecondMaxPtMuon<<std::endl;
        if ((!containMaxPtMuon|| !containSecondMaxPtMuon )&& fabs(invMass-invMassMostClose)<1e-6 ){
          std::cout<<"PairThatWeMissedFound!"<<std::endl;
        }

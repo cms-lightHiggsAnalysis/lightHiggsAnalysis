@@ -1,0 +1,4 @@
+/DoubleMuon/dntaylor-2017-11-03_Skim_MuMuTauTau_v4_MINIAODoutputZSKIM-58fa585557bb6dc4894eaeabc5791e7a/USER
+/DoubleMuon/dntaylor-2017-11-03_Skim_MuMuTauTau_v4_MINIAODoutputZSKIM-9408cb376698ca4c8373be9e4ccdc2e4/USER
+/SingleMuon/dntaylor-2017-11-03_Skim_MuMuTauTau_v4_MINIAODoutputZSKIM-58fa585557bb6dc4894eaeabc5791e7a/USER
+/SingleMuon/dntaylor-2017-11-03_Skim_MuMuTauTau_v4_MINIAODoutputZSKIM-9408cb376698ca4c8373be9e4ccdc2e4/USER

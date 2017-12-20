@@ -191,6 +191,7 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    double invMass=0;
    reco::Muon* HighestPtMu1Mu2;
    reco::Muon* LowestPtMu1Mu2;
+
    invMass=((*pMu1Mu2)[0]->p4()+(*pMu1Mu2)[1]->p4()).M();
    if((*pMu1Mu2)[0]->pt()> (*pMu1Mu2)[1]->pt()){
       HighestPtMu1Mu2=const_cast<reco::Muon*>(&(*((*pMu1Mu2)[0])));
@@ -200,7 +201,7 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    {
       HighestPtMu1Mu2=const_cast<reco::Muon*>(&(*((*pMu1Mu2)[1])));
       LowestPtMu1Mu2=const_cast<reco::Muon*>(&(*((*pMu1Mu2)[0])));
-   } 
+   }
    double Mu2Pt=0;
    double dR=0.0;
    double dRMetMu1=0.0;
@@ -212,8 +213,7 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    etaOfMu1=HighestPtMu1Mu2->eta();
    histos2D_["dRVsMu2Pt"]->Fill(dR, Mu2Pt); 
    histos2D_["Mu1PtMu2Pt"]->Fill(HighestPtMu1Mu2->pt(), Mu2Pt);
-   double SumMet=0.0;
-   int countMet=0;
+
    reco::PFMET Met=(*pMets)[0];
    dRMetMu1=deltaR(*HighestPtMu1Mu2,Met);
    if(MC_){

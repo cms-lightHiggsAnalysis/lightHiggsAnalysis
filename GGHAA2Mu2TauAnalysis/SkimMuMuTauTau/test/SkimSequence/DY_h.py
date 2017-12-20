@@ -2,15 +2,16 @@ import FWCore.ParameterSet.Config as cms
 from subprocess import *
 import FWCore.Utilities.FileUtils as FileUtils
 from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import *
-mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/DYHigh_raw.txt')
-process = cms.Process("SKIM")
+#mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/DYMini.txt')
+mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/AllRootFiles/TTBar.txt')
+process = cms.Process("MINIAODSKIM")
 #Debug utils
-process.ProfilerService = cms.Service (
-      "ProfilerService",
-       firstEvent = cms.untracked.int32(2),
-       lastEvent = cms.untracked.int32(500),
-       paths = cms.untracked.vstring('schedule')
-)
+#process.ProfilerService = cms.Service (
+#      "ProfilerService",
+#       firstEvent = cms.untracked.int32(2),
+#       lastEvent = cms.untracked.int32(500),
+#       paths = cms.untracked.vstring('schedule')
+#)
 
 #process.SimpleMemoryCheck = cms.Service(
 #    "SimpleMemoryCheck",
@@ -197,6 +198,8 @@ process.ak4JetTracksAssociatorAtVertex.tracks = cms.InputTag("generalTracks")
 
 process.lumiTree = cms.EDAnalyzer("LumiTree",
     genEventInfo = cms.InputTag("generator"),
+    nevents = cms.InputTag('lumiSummary','numberOfEvents'),
+    summedWeights = cms.InputTag('lumiSummary','sumOfWeightedEvents')
 )	
 process.btagging = cms.Sequence(
     process.ak4JetTracksAssociatorAtVertex*
@@ -229,28 +232,44 @@ process.btagging = cms.Sequence(
 process.TriggerAnalyzer0=cms.EDAnalyzer("TriggerAnalyzer")
 process.HLTEle =cms.EDFilter("HLTHighLevel",
      TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
-     HLTPaths = cms.vstring("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*"),
+     #HLTPaths = cms.vstring("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*" ),
      #HLTPaths = cms.vstring("HLT_Mu7p5_Track7_Upsilon_v*", "HLT_Mu7p5_Track3p5_Upsilon_v*","HLT_Mu7p5_Track2_Upsilon_v*", "HLT_Mu7p5_L2Mu2_Upsilon_v*","HLT_Dimuon8_Upsilon_Barrel_v*","HLT_Dimuon13_Upsilon_v*","HLT_Dimuon0_Upsilon_Muon_v*" ),
+     HLTPaths = cms.vstring("HLT_IsoMu24_v*","HLT_IsoTkMu24_v*"),
      eventSetupPathsKey = cms.string(''),
      andOr = cms.bool(True), #----- True = OR, False = AND between the HLTPaths
      throw = cms.bool(False) # throw exception on unknown path names
 )
-
 process.hTozzTo4leptonsMuonCalibrator = cms.EDProducer("HZZ4LeptonsMuonCalibrator",
     muonCollection = cms.InputTag("muons"),
-    identifier = cms.string("MC_80X_13TeV"),
+    identifier = cms.string("DATA_80X_13TeV"),
     isData         = cms.bool(False)
 )
-MU_CUT=("pt>5.0 && abs(eta)<2.4")
-process.PreMuons = cms.EDFilter('MuonRefSelector',
-                                 src = cms.InputTag("muons"),
-                                 cut = cms.string(MU_CUT),
-                                 filter = cms.bool(True)
+process.RandomNumberGeneratorService = cms.Service(
+    "RandomNumberGeneratorService",
+    RochesterCorr = cms.PSet(
+        initialSeed = cms.untracked.uint32(3),
+        engineName = cms.untracked.string('TRandom3')
+    ),
+)
+
+process.RochesterCorr=cms.EDProducer("Rochester",
+    muonCollection = cms.InputTag("slimmedMuons"),
+    identifier = cms.string("DATA_80X_13TeV"),
+    isData         = cms.bool(False),
+    initialSeed = cms.untracked.uint32(89),
+    engineName = cms.untracked.string('TRandom3'),
+    fp=cms.FileInPath("Rochester/RochesterSub/data/rcdata.2016.v3/config.txt")
+)
+process.PreMuons = cms.EDFilter('PTETACUT',
+            muonTag=cms.InputTag("RochesterCorr","RochesterMu"),
+            Eta=cms.double(2.4),
+            Pt=cms.double(5.0),
+            minNumObjsToPassFilter=cms.uint32(2)
 )
 
 process.Mu45Selector = cms.EDFilter(
     'MuonTriggerObjectFilter',
-    recoObjTag = cms.InputTag('PreMuons'),
+    recoObjTag = cms.InputTag('MuonIWant'),
     genParticleTag = cms.InputTag('genParticles'),
     triggerEventTag = cms.untracked.InputTag("hltTriggerSummaryAOD", "", "HLT2"),
     triggerResultsTag = cms.untracked.InputTag("TriggerResults", "", "HLT2"),
@@ -268,14 +287,13 @@ process.Mu45Selector = cms.EDFilter(
 process.AllPreMuonsID=cms.EDFilter(
   'MuonsID',
   muonTag=cms.InputTag('PreMuons'),
-  vtxTag= cms.InputTag('offlinePrimaryVertices'),
   muonID=cms.string('medium')
 )
 process.Isolate=cms.EDFilter('CustomDimuonSelector',
                                 muonTag=cms.InputTag('AllPreMuonsID'),
                                 isoMax=cms.double(0.25),
                                 isoMin=cms.double(0.0),
-                                baseMuonTag=cms.InputTag('muons'),
+                                baseMuonTag=cms.InputTag('slimmedMuons'),
                                 particleFlow=cms.InputTag('particleFlow'),
                                 minNumObjsToPassFilter=cms.uint32(2)
 )
@@ -284,8 +302,8 @@ process.HighestPtAndMuonSignDRSelector=cms.EDFilter(
                 muonTag=cms.InputTag('AllPreMuonsID'),
                 dRCut=cms.double(-1),
                 passdR=cms.bool(True),
-                Mu1PtCut=cms.double(20.0),
-                Mu2PtCut=cms.double(20.0),
+                Mu1PtCut=cms.double(25.0),
+                Mu2PtCut=cms.double(10.0),
                 oppositeSign = cms.bool(True) # False for SameSignDiMu, True regular
 )
 
@@ -472,14 +490,14 @@ process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
 )
 process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   'Mu1Mu2Analyzer',
-  Mu1Mu2=cms.InputTag("MassCut",'','SKIM'),
+  Mu1Mu2=cms.InputTag("MassCut",'','MINIAODSKIM'),
   Mu2PtBins=cms.vdouble(x for x in range(0, 200)),
   invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(True),
-  pfMet=cms.InputTag("pfMet","","RECO"),
-  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileupWeightForEraC.root"),
+  pfMet=cms.InputTag("slimmedMETs"),
+  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileup.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
-  Generator=cms.InputTag("generator","","SIM")
+  Generator=cms.InputTag("generator","","MINIAODSIM")
 )
 process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
 #sequences
@@ -487,13 +505,12 @@ process.MuMuSequenceSelector=cms.Sequence(
         #process.TriggerAnalyzer0*
         process.lumiTree*
         process.HLTEle*
-        #process.hTozzTo4leptonsMuonCalibrator*
+        process.RochesterCorr*
 	process.PreMuons*
         process.AllPreMuonsID*
         process.HighestPtAndMuonSignDRSelector*
         process.MassCut*
-        process.Mu1Mu2Analyzer*
-        process.GetRunNumber
+        process.Mu1Mu2Analyzer
 )
 
 process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector
