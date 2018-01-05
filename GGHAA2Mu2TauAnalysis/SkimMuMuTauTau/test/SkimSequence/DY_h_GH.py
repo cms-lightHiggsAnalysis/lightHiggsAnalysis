@@ -248,8 +248,8 @@ process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   MC=cms.bool(True),
   pfMet=cms.InputTag("slimmedMETs"),
   fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileup.root"),
-  fpIDs=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_BCDEF.root"),
-  fpISOs=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_BCDEF_ISO.root"),
+  fpIDs=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_GH.root"),
+  fpISOs=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_GH_ISO.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
   Generator=cms.InputTag("generator")
 )
