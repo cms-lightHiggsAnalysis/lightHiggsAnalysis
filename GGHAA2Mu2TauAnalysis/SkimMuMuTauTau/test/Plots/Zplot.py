@@ -60,23 +60,10 @@ hash_={"pt of Mu1 Mu2 (H750a09)":["pt of reco muon", [0,300]],
 
 interested=["invMass of Mu1 Mu2 (H750a09)", "dRMetMu1","MetPt","Mu1Mu2Pt","Mu1Mu2Eta","Eta of Mu1","Eta of Mu2", "pt of Mu1","Mu1PtMu2Pt", "pt of Mu2", "dRMu1Mu2Wider"]
 
-def draw_one_hist(data, DY, ST_s,ST_t_antitop_4f, ST_t_top_4f,ST_tW_antitop_5f, ST_tW_top_5f, xaxis, rangex):
+def draw_one_hist(data,  stack, xaxis, rangex):
 	data.SetTitle('Observed')
 	data.SetMarkerSize(1)
 	data.SetMarkerStyle(20)
-        stack=ROOT.THStack('stack', 'stack')
-        DY.SetFillColor(ROOT.kOrange)
-        ST_s.SetFillColor(ROOT.kMagenta)
-        ST_t_antitop_4f.SetFillColor(ROOT.kRed)
-        ST_t_top_4f.SetFillColor(ROOT.kYellow)
-        ST_tW_antitop_5f.SetFillColor(ROOT.kCyan)
-        ST_tW_top_5f.SetFillColor(ROOT.kGreen)
-        stack.Add(ST_t_antitop_4f)
-        stack.Add(ST_t_top_4f)
-        stack.Add(ST_tW_antitop_5f)
-        stack.Add(ST_tW_top_5f)
-        stack.Add(ST_s)
-        stack.Add(DY)
 	# create canvas
 	canvas = ROOT.TCanvas(savename,savename,50,50,800,800)
 	plotpad = ROOT.TPad("plotpad", "top pad", 0.0, 0.21, 1.0, 1.0)
@@ -207,38 +194,20 @@ for key in tlist_keys:
       print(hash_[key.GetTitle()][0])
       data = tfile.Get('Mu1Mu2Analyzer/'+hash_[key.GetTitle()][0])
       txtfile=open("InputZplot.txt", "r")
-      tfileMC = ROOT.TFile.Open('./RootFiles/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_8ddVersion2.root')
-      DY=tfileMC.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      DY.Scale(1.0/7.8e11*5765.4*Luminosity)
-      DY.SetTitle("DY")
-     
-      tfileMC1=ROOT.TFile.Open('./RootFiles/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1_8ddVersion2.root')
-      ST_s=tfileMC1.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      ST_s.Scale(1.0/3.0e6*3.36*Luminosity)
-      ST_s.SetTitle("ST_s_4f")
-   
-
-      tfileMC2=ROOT.TFile.Open('./RootFiles/ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1_8ddVersion2.root')
-      ST_t_antitop_4f=tfileMC2.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      ST_t_antitop_4f.Scale(1.0/3.4e7*28.36*Luminosity)
-      ST_t_antitop_4f.SetTitle("ST_t_antitop_4f")
-
-      tfileMC3=ROOT.TFile.Open('./RootFiles/ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1_8ddVersion2.root')
-      ST_t_top_4f=tfileMC3.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      ST_t_top_4f.Scale(1.0/6.7e7*44.33*Luminosity)
-      ST_t_top_4f.SetTitle("ST_t_top_4f")
-
-      tfileMC4=ROOT.TFile.Open('./RootFiles/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2.root')
-      ST_tW_antitop_5f=tfileMC4.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      ST_tW_antitop_5f.Scale(1.0/6.9e6*35.85*Luminosity)
-      ST_tW_antitop_5f.SetTitle("ST_tW_antitop_5f")
-       
-      tfileMC5=ROOT.TFile.Open('./RootFiles/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2.root')
-      ST_tW_top_5f=tfileMC5.Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
-      ST_tW_top_5f.Scale(1.0/6.7e6*35.85*Luminosity)
-      ST_tW_top_5f.SetTitle("ST_tW_top_5f")
-
+      stack=ROOT.THStack('stack', 'stack')
+      files = []
+      for line in txtfile:
+        lis=line.rstrip().split(',')
+        print lis
+        crossSection=float(lis[1])
+        summedWeights=float(lis[5])
+        files.append( ROOT.TFile.Open('./RootFiles/'+lis[0]))
+        mc=files[-1].Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
+        mc.Scale(1.0/summedWeights*crossSection*Luminosity)
+        mc.SetTitle(lis[2])
+        mc.SetFillColor(eval(lis[3]))
+        stack.Add(mc)
       xaxis=hash_[key.GetTitle()][0]
       myrange=hash_[key.GetTitle()][1]
-      draw_one_hist(data, DY, ST_s,ST_t_antitop_4f, ST_t_top_4f,ST_tW_antitop_5f,ST_tW_top_5f,xaxis, myrange)
+      draw_one_hist(data, stack,xaxis, myrange)
 out.Close()

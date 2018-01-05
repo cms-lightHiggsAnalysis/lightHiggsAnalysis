@@ -1,6 +1,0 @@
-DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_8ddVersion2.root,5765.4,  DYJM-50,ROOT.kGray+3, ROOT.kGray+3,5.04e13 
-ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1_8ddVersion2.root, 3.36, ST_s_4f, ROOT.kMagenta, ROOT.kMagenta, 3.37e6
-ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1_8ddVersion2.root, 28.36, ST_t_antitop_4f, ROOT.kRed, ROOT.kRed,3.4e7 
-ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1_8ddVersion2.root, 44.33, ST_t_top_4f, ROOT.kOrange, ROOT.kOrange,6.7e7 
-ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2.root,35.85, ST_tW_antitop_5f, ROOT.kCyan, ROOT.kCyan,6.9e6
-ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_8ddVersion2.root,35.83, ST_tW_top_5f, ROOT.kGreen, ROOT.kGreen,6.7e6
