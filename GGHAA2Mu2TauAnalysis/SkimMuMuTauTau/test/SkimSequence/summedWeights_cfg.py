@@ -1,29 +1,28 @@
+#################
+# Initialization
+#################
 import FWCore.ParameterSet.Config as cms
-from subprocess import *
 import FWCore.Utilities.FileUtils as FileUtils
-process = cms.Process("ASDFASDFMINIAODSKIM")
-mylist=FileUtils.loadListFromFile('/afs/cern.ch/user/k/ktos/NewSkimDir/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/INPUT_FILE.txt')
+process = cms.Process("CleanJetsAnalyzer")
+mylist = FileUtils.loadListFromFile('/afs/cern.ch/user/k/ktos/NewSkimDir/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/SummedWeightsFiles/TXT_INPUT_FILE')
+
+###################################################
+# initialize MessageLogger and output report
+###################################################
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+
+process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
+process.options   = cms.untracked.PSet( 
+		wantSummary = cms.untracked.bool(True), 
+		SkipEvent = cms.untracked.vstring('ProductNotFound')
+)
+
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+
+####################
+# Input File List
+####################
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*mylist))
-
-process.source.inputCommands = cms.untracked.vstring("keep *")
-
-process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
-#for L1GtStableParametersRcd
-process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
-
-#for HLT selection
-process.load('HLTrigger/HLTfilters/hltHighLevel_cfi')
-import HLTrigger.HLTfilters.hltHighLevel_cfi as hlt
-#for mu-less jets
-process.load('Configuration.StandardSequences.MagneticField_cff') #I changed it from: process.load("Configuration.StandardSequences.MagneticField_38T_cff")
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff') # Kyle Added this
-process.load('TrackingTools.TransientTrack.TransientTrackBuilder_cfi') # Kyle Added this
-process.GlobalTag.globaltag = cms.string('80X_dataRun2_2016SeptRepro_v4') # CMSSW 8
-process.load("Configuration.Geometry.GeometryRecoDB_cff")
-process.load("RecoTauTag.Configuration.RecoPFTauTag_cff")
-#process.load("RecoTauTag.RecoTau.RecoTauPiZeroProducer_cfi")
-process.load('Tools/CleanJets/cleanjets_cfi')
-
 
 process.sumWeights = cms.EDAnalyzer(
     'TestLumiBlockAnalyzer',
@@ -32,27 +31,9 @@ process.sumWeights = cms.EDAnalyzer(
     )
 
 
-
-process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
-#sequences
-process.MuMuSequenceSelector=cms.Sequence(
-			process.sumWeights
+#########################################################
+# this will produce a ref to the original muon collection
+#########################################################
+process.p2 = cms.Path(
+     process.sumWeights
 )
-
-
-process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector
-)
-
-
-process.antiSelectedOutput = cms.OutputModule(
-    "PoolOutputModule",
-    SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p')),
-    fileName = cms.untracked.string('RegionB_selection.root')
-    )
-#sequences
-process.TFileService = cms.Service("TFileService",
-    fileName =  cms.string('TFiledataZ.root')
-)
-#no selection path
-process.p = cms.Path(process.antiSelectionSequence)
-process.e = cms.EndPath(process.antiSelectedOutput)

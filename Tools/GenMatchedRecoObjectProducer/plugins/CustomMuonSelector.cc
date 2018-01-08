@@ -66,9 +66,6 @@ private:
   //input tag for reco vertex collection
   edm::EDGetTokenT<reco::VertexCollection> vtxTag_;
 
-  //input tag for muons that should not be allowed to pass (i.e. they passed some other selection)
-  edm::EDGetTokenT<edm::View<pat::Muon> > vetoMuonTag_;
-  edm::EDGetTokenT<edm::View<pat::Muon> > vetoMuonTag2_;
   //muon ID to apply
   std::string muonID_;
 
@@ -109,10 +106,6 @@ CustomMuonSelector::CustomMuonSelector(const edm::ParameterSet& iConfig) :
   baseMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("baseMuonTag"))),
   muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
   vtxTag_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vtxTag"))),
-  vetoMuonTag_(iConfig.existsAs<edm::InputTag>("vetoMuonTag")?
-                  consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("vetoMuonTag")):edm::EDGetTokenT<edm::View<pat::Muon> >()),
-  vetoMuonTag2_(iConfig.existsAs<edm::InputTag>("vetoMuonTag2")?
-                  consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("vetoMuonTag2")):edm::EDGetTokenT<edm::View<pat::Muon> >()),
   muonID_(iConfig.getParameter<std::string>("muonID")),
   PFIsoMax_(iConfig.getParameter<double>("PFIsoMax")),
   detectorIsoMax_(iConfig.getParameter<double>("detectorIsoMax")),
@@ -156,15 +149,6 @@ bool CustomMuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetu
   //get vertices
   edm::Handle<reco::VertexCollection> pVertices;
   iEvent.getByToken(vtxTag_, pVertices);
-
-  //get veto muons
-  edm::Handle<edm::View<pat::Muon> > pVetoMuons;
-  if(vetoMuonTag_.isUninitialized()){}
-  else iEvent.getByToken(vetoMuonTag_, pVetoMuons);
-
-  edm::Handle<edm::View<pat::Muon> > pVetoMuons2;
-  if(vetoMuonTag2_.isUninitialized()){}
-  else iEvent.getByToken(vetoMuonTag2_, pVetoMuons2);
 
   //identify the first good vertex (the "primary" (?))
   reco::Vertex* pPV = Common::getPrimaryVertex(pVertices);
@@ -225,58 +209,11 @@ bool CustomMuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetu
   unsigned int nPassingMuons = 0;
   for (std::vector<pat::Muon>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); ++iMuon) 
   {
-    bool checkVeto = false;
-    if (pVetoMuons.isValid()) 
-    {
-      for (edm::View<pat::Muon>::const_iterator iVetoMuon = pVetoMuons->begin(); iVetoMuon != pVetoMuons->end(); ++iVetoMuon) 
-      {
-        if (deltaR(*iMuon, *iVetoMuon) < .0001 && ( fabs(iMuon->pt()-iVetoMuon->pt()) / iVetoMuon->pt() ) < 0.0001)
-          checkVeto = true;
-      }//for iVetoMuon
-    }//if pVetoMuons.isValid
-    if (pVetoMuons2.isValid() && !checkVeto)
-    {
-      for (edm::View<pat::Muon>::const_iterator iVetoMuon = pVetoMuons2->begin(); iVetoMuon != pVetoMuons2->end(); ++iVetoMuon)
-      {
-        if (deltaR(*iMuon, *iVetoMuon) < .0001 && ( fabs(iMuon->pt()-iVetoMuon->pt()) / iVetoMuon->pt() ) < 0.0001)
-          checkVeto = true;
-      }//for iVetoMuon
-    }//if pVetoMuons2.isValid
-    if (!checkVeto)
-    { 
-      muonColl->push_back(*iMuon);
-      ++nPassingMuons;
-    }//if
+    muonColl->push_back(*iMuon);
+    ++nPassingMuons;
   }//for iMuon
 
-//  //make an STL container of the veto muon ref keys
-//  std::vector<int> vetoMuonRefKeys;
-//  if (pVetoMuons.isValid()) 
-//  {
-//    for (edm::View<pat::Muon>::const_iterator iVetoMuon = pVetoMuons->begin(); iVetoMuon != pVetoMuons->end(); ++iVetoMuon) 
-//      vetoMuonRefKeys.push_back(iVetoMuon.key());
-//  }// ifpVetoMuons.isValid
-//
-//  std::vector<int> vetoMuonRefKeys2;
-//  if (pVetoMuons2.isValid()) 
-//  {
-//    for (edm::View<pat::Muon>::const_iterator iVetoMuon2 = pVetoMuons2->begin(); iVetoMuon2 != pVetoMuons2->end(); ++iVetoMuon2)
-//      vetoMuonRefKeys2.push_back(iVetoMuon2.key());
-//  }//pVetoMuons2.isValid
-//  //fill output collection
-//  unsigned int nPassingMuons = 0;
-//  for (std::vector<pat::Muon>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); ++iMuon) 
-//  {
-//    if ((std::find(vetoMuonRefKeys.begin(), vetoMuonRefKeys.end(), iMuon.key()) == vetoMuonRefKeys.end())
-//        && (std::find(vetoMuonRefKeys2.begin(), vetoMuonRefKeys2.end(),  iMuon.key()) == vetoMuonRefKeys2.end())) 
-//    {
-//      muonColl->push_back(*iMuon);
-//      ++nPassingMuons;
-//    }//if
-//  }//for iMuon
   iEvent.put(muonColl);
-
-  //if not enough muons passing cuts were found in this event, stop processing
   return (nPassingMuons >= minNumObjsToPassFilter_);
 }
 

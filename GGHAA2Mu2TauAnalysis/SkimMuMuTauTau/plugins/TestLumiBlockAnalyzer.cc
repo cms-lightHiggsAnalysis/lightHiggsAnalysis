@@ -58,7 +58,7 @@ class TestLumiBlockAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResour
       // ----------member data ---------------------------
       edm::EDGetTokenT<int> neventsToken_;
       edm::EDGetTokenT<float> summedWeightsToken_;
-      double value;
+      float value;
 };
 
 //
@@ -113,18 +113,17 @@ TestLumiBlockAnalyzer::beginJob()
 void 
 TestLumiBlockAnalyzer::endJob() 
 {
+    std::cout  << std::fixed << "\tvalue=" << value << std::endl;
 }
 
 void TestLumiBlockAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& Lumi, edm::EventSetup const& iSetup) { }
 
 void TestLumiBlockAnalyzer::endLuminosityBlock(edm::LuminosityBlock const& Lumi, edm::EventSetup const& iSetup) {
-std::cout << "check1" << std::endl;
     edm::Handle<int> neventsHandle;
     Lumi.getByToken(neventsToken_, neventsHandle);
     edm::Handle<float> summedWeightsHandle;
     Lumi.getByToken(summedWeightsToken_, summedWeightsHandle);
     value += *summedWeightsHandle;
-    std::cout << "nevents: " << *neventsHandle << " summedWeights: " << *summedWeightsHandle << "\tvalue=" << value << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
