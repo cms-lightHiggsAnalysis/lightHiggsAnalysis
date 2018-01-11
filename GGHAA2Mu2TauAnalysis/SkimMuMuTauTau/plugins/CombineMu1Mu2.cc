@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:   temp/DiMuSigndRSelector
-// Class:     DiMuSigndRSelector
+// Package:   temp/CombineMu1Mu2
+// Class:     CombineMu1Mu2
 // 
-/**\class DiMuSigndRSelector DiMuSigndRSelector.cc temp/DiMuSigndRSelector/plugins/DiMuSigndRSelector.cc
+/**\class CombineMu1Mu2 CombineMu1Mu2.cc temp/CombineMu1Mu2/plugins/CombineMu1Mu2.cc
 
  Description: [one line class summary]
 
@@ -35,20 +35,18 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
-#include "DataFormats/PatCandidates/interface/Muon.h"
-#include "DataFormats/PatCandidates/interface/PATObject.h"
-#include "DataFormats/Candidate/interface/CompositePtrCandidate.h"
-#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "Tools/Common/interface/Common.h"
 //
 //
 // class declaration
 //
 
-class DiMuSigndRSelector : public edm::EDFilter {
+class CombineMu1Mu2 : public edm::EDFilter {
   public:
-     explicit DiMuSigndRSelector(const edm::ParameterSet&);
-     ~DiMuSigndRSelector();
+     explicit CombineMu1Mu2(const edm::ParameterSet&);
+     ~CombineMu1Mu2();
 
      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -62,14 +60,9 @@ class DiMuSigndRSelector : public edm::EDFilter {
      //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
      //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
-     // ----------member data ---------------------------
+      // ----------member data ---------------------------
   edm::EDGetTokenT<edm::View<pat::Muon> > mu1Tag_; 
-  edm::EDGetTokenT<edm::View<pat::Muon> > muonsTag_; 
-  double dRCut_;
-  bool oppositeSign_;
-  bool passdR_;
-  std::map<std::string, TH1D*> histos1D_;
-  
+  edm::EDGetTokenT<edm::View<pat::Muon> > mu2Tag_; 
 };
 
 //
@@ -83,20 +76,16 @@ class DiMuSigndRSelector : public edm::EDFilter {
 //
 // constructors and destructor
 //
-DiMuSigndRSelector::DiMuSigndRSelector(const edm::ParameterSet& iConfig):
+CombineMu1Mu2::CombineMu1Mu2(const edm::ParameterSet& iConfig):
   mu1Tag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("mu1Tag"))),
-  muonsTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonsTag"))),
-  dRCut_(iConfig.getParameter<double>("dRCut")),
-  oppositeSign_(iConfig.getParameter<bool>("oppositeSign")),
-  passdR_(iConfig.existsAs<bool>("passdR")? iConfig.getParameter<bool>("passdR"):true),  
-  histos1D_()
+  mu2Tag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("mu2Tag")))
 {
   //now do what ever initialization is needed
   produces<std::vector<pat::Muon> >();
 }
 
 
-DiMuSigndRSelector::~DiMuSigndRSelector()
+CombineMu1Mu2::~CombineMu1Mu2()
 {
  
   // do anything here that needs to be done at desctruction time
@@ -111,47 +100,39 @@ DiMuSigndRSelector::~DiMuSigndRSelector()
 
 // ------------ method called on each new Event  ------------
 bool
-DiMuSigndRSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
+CombineMu1Mu2::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
   edm::Handle<edm::View<pat::Muon> > pMu1;
-  iEvent.getByToken(mu1Tag_, pMu1); 
-  pat::Muon mu1 = pMu1->at(0); 
+  iEvent.getByToken(mu1Tag_, pMu1);
+  pat::Muon mu1 = pMu1->at(0);
 
-  edm::Handle<edm::View<pat::Muon> > pMuons;
-  iEvent.getByToken(muonsTag_, pMuons); 
-  
-  for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
-  {
-    double dR = deltaR(*iMuon, mu1);
-    if ( (dR < dRCut_ && passdR_) || (dR > dRCut_ && !passdR_) )
-    {
-      if (  (oppositeSign_ && mu1.pdgId() == (-1)*iMuon->pdgId() )  ||  (!oppositeSign_ && mu1.pdgId()==iMuon->pdgId() )  )   
-        muonColl->push_back(*iMuon);
-    }//if dR
-  }//for iMuon
+  edm::Handle<edm::View<pat::Muon> > pMu2;
+  iEvent.getByToken(mu2Tag_, pMu2);
+  pat::Muon mu2 = pMu2->at(0);
 
-  iEvent.put(muonColl);
+
+  muonColl->push_back(mu1);
+  muonColl->push_back(mu2);
+  iEvent.put(muonColl);  
   return true;
-}
+}//GetMuOn
 // ------------ method called once each job just before starting event loop  ------------
 void 
-DiMuSigndRSelector::beginJob()
+CombineMu1Mu2::beginJob()
 {
-  edm::Service<TFileService> fileService;
-  histos1D_["WhyIFailed"]=fileService->make<TH1D>("WhyIFailed","Left: fail dR | Right: passdR fail charge",2,-.5,1.5);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-DiMuSigndRSelector::endJob() {
+CombineMu1Mu2::endJob() {
 }
 
 // ------------ method called when starting to processes a run  ------------
 /*
 void
-DiMuSigndRSelector::beginRun(edm::Run const&, edm::EventSetup const&)
+CombineMu1Mu2::beginRun(edm::Run const&, edm::EventSetup const&)
 { 
 }
 */
@@ -159,7 +140,7 @@ DiMuSigndRSelector::beginRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when ending the processing of a run  ------------
 /*
 void
-DiMuSigndRSelector::endRun(edm::Run const&, edm::EventSetup const&)
+CombineMu1Mu2::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 */
@@ -167,7 +148,7 @@ DiMuSigndRSelector::endRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when starting to processes a luminosity block  ------------
 /*
 void
-DiMuSigndRSelector::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+CombineMu1Mu2::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
@@ -175,14 +156,14 @@ DiMuSigndRSelector::beginLuminosityBlock(edm::LuminosityBlock const&, edm::Event
 // ------------ method called when ending the processing of a luminosity block  ------------
 /*
 void
-DiMuSigndRSelector::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+CombineMu1Mu2::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
  
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-DiMuSigndRSelector::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+CombineMu1Mu2::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -190,4 +171,4 @@ DiMuSigndRSelector::fillDescriptions(edm::ConfigurationDescriptions& description
   descriptions.addDefault(desc);
 }
 //define this as a plug-in
-DEFINE_FWK_MODULE(DiMuSigndRSelector);
+DEFINE_FWK_MODULE(CombineMu1Mu2);

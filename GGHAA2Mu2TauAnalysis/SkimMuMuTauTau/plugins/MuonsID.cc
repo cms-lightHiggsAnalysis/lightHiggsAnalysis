@@ -115,7 +115,8 @@ MuonsID::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
    {
      for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
      {
-       if (muon::isLooseMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
+//       if (muon::isLooseMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
+       if (muon::isMediumMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
        {
          CountMuon+=1;
          muonColl->push_back(*iMuon);

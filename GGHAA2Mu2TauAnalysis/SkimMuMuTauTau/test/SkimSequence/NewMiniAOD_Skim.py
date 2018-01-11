@@ -173,29 +173,35 @@ process.Mu2Iso=cms.EDFilter(
   passRelIso = cms.bool(False) #False = Non-Iso DiMu, True = Iso-DiMu
 )
 
-process.GetMuTwo = cms.EDFilter(
-       'GetHighestPt',
-       muonTag = cms.InputTag('Mu2Iso')
-)
-
 process.DiMuSigndRSelector=cms.EDFilter(
                 'DiMuSigndRSelector',
                 mu1Tag = cms.InputTag('GetMuOne'),
-	        mu2Tag = cms.InputTag('GetMuTwo'),
+	        muonsTag = cms.InputTag('Mu2Iso'),
                 dRCut = cms.double(1.5),
                 passdR = cms.bool(True),
                 oppositeSign = cms.bool(True) # False for SameSignDiMu, True regular
 )
 
+process.GetMuTwo = cms.EDFilter(
+       'GetHighestPt',
+       muonTag = cms.InputTag('DiMuSigndRSelector')
+)
+
+process.Mu1Mu2 = cms.EDFilter(
+	'CombineMu1Mu2',
+        mu1Tag = cms.InputTag('GetMuOne'),
+	mu2Tag = cms.InputTag('GetMuTwo')
+)
+
 process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
-                              Mu1Mu2=cms.InputTag('DiMuSigndRSelector'),
+                              Mu1Mu2=cms.InputTag('Mu1Mu2'),
                               minMass=cms.double(81), #3   or 81
                               maxMass=cms.double(101) #3.2 or 101
 )
 
 process.Mu3=cms.EDFilter('VetoMuon',
         muonTag=cms.InputTag('MuonsIDdxydz'),
-        vetoMuonTag=cms.InputTag('DiMuSigndRSelector'),
+        vetoMuonTag=cms.InputTag('Mu1Mu2'),
 	dRCut=cms.double(0.5),
 	minNumObjsToPassFilter=cms.uint32(1)
 )
@@ -220,7 +226,7 @@ process.muHadTauDMSelector = cms.EDFilter(
     'CustomTauSepFromMuonSelector',
     baseTauTag = cms.InputTag('slimmedTausMuonCleaned'),
     tauHadIsoTag = cms.string('hpsPFTauDiscriminationByIsolationMVArun2v1DBnewDMwLTraw'),
-    overlapMuonTag = cms.InputTag('DiMuSigndRSelector'),
+    overlapMuonTag = cms.InputTag('Mu1Mu2'),
     muons = cms.InputTag('Mu3ID'),
     tauDiscriminatorTags = cms.vstring('decayModeFinding'),
     passDiscriminator = cms.bool(True),
@@ -236,7 +242,7 @@ process.muHadTauDMIsoSelector = cms.EDFilter(
     'CustomTauSepFromMuonSelector',
     baseTauTag = cms.InputTag('muHadTauDMSelector'),
     tauHadIsoTag = cms.string('hpsPFTauDiscriminationByIsolationMVArun2v1DBnewDMwLTraw'),
-    overlapMuonTag = cms.InputTag('DiMuSigndRSelector'),
+    overlapMuonTag = cms.InputTag('Mu1Mu2'),
     muons = cms.InputTag('Mu3ID'),
 #    tauDiscriminatorTags = cms.vstring('ByMediumIsolationMVA3oldDMwoLT'),
     tauDiscriminatorTags = cms.vstring('byMediumIsolationMVArun2v1DBoldDMwLT'),
@@ -262,8 +268,9 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.TrigMuMatcher*
 	process.GetMuOne*
         process.Mu2Iso*
-        process.GetMuTwo*
         process.DiMuSigndRSelector*
+        process.GetMuTwo*
+        process.Mu1Mu2*
         process.Mu3*
         process.Mu3ID*
 #        process.MassCut*
