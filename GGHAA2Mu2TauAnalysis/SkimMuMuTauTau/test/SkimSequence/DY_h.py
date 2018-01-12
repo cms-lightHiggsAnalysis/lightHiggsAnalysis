@@ -219,30 +219,63 @@ process.PreMuons = cms.EDFilter('PTETACUT',
             minNumObjsToPassFilter=cms.uint32(2)
 )
 
-
-process.AllPreMuonsID=cms.EDFilter(
+process.MuonsIDdxydz=cms.EDFilter(
   'MuonsID',
-  muonTag=cms.InputTag('PreMuons'),
-  muonID=cms.string('medium')
+  muonTag = cms.InputTag('PreMuons'),
+  muonID = cms.string('medium')
 )
-process.HighestPtAndMuonSignDRSelector=cms.EDFilter(
-                'HighestPtAndMuonSignDRSelector',
-                muonTag=cms.InputTag('AllPreMuonsID'),
-                dRCut=cms.double(-1),
-                passdR=cms.bool(True),
-                Mu1PtCut=cms.double(25.0),
-                Mu2PtCut=cms.double(20.0),
+
+process.TrigMuMatcher=cms.EDFilter(
+        'TrigMuMatcher',
+        muonsTag = cms.InputTag('MuonsIDdxydz'),
+        bits = cms.InputTag("TriggerResults","","HLT"),
+        prescales = cms.InputTag("patTrigger"),
+        triggerObjects = cms.InputTag("selectedPatTrigger"),
+        trigNames = cms.vstring("HLT_IsoMu24_v","HLT_IsoTkMu24_v"),
+        dRCut = cms.double(.15),
+        mu1PtCut = cms.double(26.0)
+)
+process.GetMuOne = cms.EDFilter(
+       'GetHighestPt',
+       muonTag = cms.InputTag('TrigMuMatcher')
+)
+
+process.Mu2Iso=cms.EDFilter(
+  'Mu2Iso',
+  muonTag = cms.InputTag('MuonsIDdxydz'),
+  mu1Tag = cms.InputTag('GetMuOne'),
+  relIsoCutVal = cms.double(0.25), # .25 for iso, -1 for ignoring iso
+  passRelIso = cms.bool(True) #False = Non-Iso DiMu, True = Iso-DiMu
+)
+
+process.DiMuSigndRSelector=cms.EDFilter(
+                'DiMuSigndRSelector',
+                mu1Tag = cms.InputTag('GetMuOne'),
+	        muonsTag = cms.InputTag('Mu2Iso'),
+                dRCut = cms.double(-1),
+                passdR = cms.bool(True),
                 oppositeSign = cms.bool(True) # False for SameSignDiMu, True regular
 )
 
+process.GetMuTwo = cms.EDFilter(
+       'GetHighestPt',
+       muonTag = cms.InputTag('DiMuSigndRSelector')
+)
+
+process.Mu1Mu2 = cms.EDFilter(
+	'CombineMu1Mu2',
+        mu1Tag = cms.InputTag('GetMuOne'),
+	mu2Tag = cms.InputTag('GetMuTwo')
+)
 process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
-                                    Mu1Mu2=cms.InputTag('HighestPtAndMuonSignDRSelector'),
+                                    Mu1Mu2=cms.InputTag('Mu1Mu2'),
                                     minMass=cms.double(60.0),
                                     maxMass=cms.double(120.0)
 )
 process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   'Mu1Mu2Analyzer',
   Mu1Mu2=cms.InputTag("MassCut",'','MINIAODSKIM'),
+  Mu1=cms.InputTag("GetMuOne"),
   Mu2PtBins=cms.vdouble(x for x in range(0, 200)),
   invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(True),
@@ -253,6 +286,8 @@ process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   fpISOs_BToF=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_BCDEF_ISO.root"),
   fpISOs_GH=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_GH_ISO.root"),
   fpTrack=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/Tracking_EfficienciesAndSF_BCDEFGH.root"),
+  fpTrigger_BToF=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_RunBtoF.root"),
+  fpTrigger_GH=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_Period4.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
   Generator=cms.InputTag("generator")
 )
@@ -264,8 +299,13 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.HLTEle*
         process.RochesterCorr*
 	process.PreMuons*
-        process.AllPreMuonsID*
-        process.HighestPtAndMuonSignDRSelector*
+        process.MuonsIDdxydz*
+        process.TrigMuMatcher*
+	process.GetMuOne*
+        process.Mu2Iso*
+        process.DiMuSigndRSelector*
+        process.GetMuTwo*
+        process.Mu1Mu2*
         process.MassCut*
         process.Mu1Mu2Analyzer
 )

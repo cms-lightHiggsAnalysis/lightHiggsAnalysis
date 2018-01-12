@@ -106,12 +106,11 @@ bool
 Mu1Mu2MassFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
-
+   using namespace std;
    edm::Handle<edm::View<pat::Muon> > pMu1Mu2;
    iEvent.getByToken(Mu1Mu2_, pMu1Mu2);
    double invMass=0;
    invMass=((*pMu1Mu2)[0].p4()+(*pMu1Mu2)[1].p4()).M();
-
    if((invMass <= minMass_ && minMass_!=-1)||(maxMass_!=-1 && invMass>=maxMass_))
       return false;
    else

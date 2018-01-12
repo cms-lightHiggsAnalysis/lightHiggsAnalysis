@@ -125,9 +125,9 @@ DiMuSigndRSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
   {
     double dR = deltaR(*iMuon, mu1);
-    if ( (dR < dRCut_ && passdR_) || (dR > dRCut_ && !passdR_) )
+    if ( dRCut_==-1 || (dR < dRCut_ && passdR_) || (dR > dRCut_ && !passdR_))
     {
-      if (  (oppositeSign_ && mu1.pdgId() == (-1)*iMuon->pdgId() )  ||  (!oppositeSign_ && mu1.pdgId()==iMuon->pdgId() )  )   
+      if (  (oppositeSign_ && mu1.pdgId() == (-1)* iMuon->pdgId() )  ||  (!oppositeSign_ && mu1.pdgId()==iMuon->pdgId() )  )   
         muonColl->push_back(*iMuon);
     }//if dR
   }//for iMuon

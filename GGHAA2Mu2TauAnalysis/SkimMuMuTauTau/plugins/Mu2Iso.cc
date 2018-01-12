@@ -106,6 +106,7 @@ Mu2Iso::~Mu2Iso()
 bool
 Mu2Iso::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+  using namespace std; 
   std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
   edm::Handle<edm::View<pat::Muon> > pMuons;
@@ -120,7 +121,7 @@ Mu2Iso::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int CountMuon=0;
   for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
   {
-    if ( deltaR(*iMuon, mu1) < .1 && fabs(iMuon->pt() - mu1.pt()) < .01 )
+    if ( deltaR(*iMuon, mu1) < .1)
       continue;
     reco::MuonPFIsolation iso = iMuon->pfIsolationR04(); 
     double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt) ) / iMuon->pt();
