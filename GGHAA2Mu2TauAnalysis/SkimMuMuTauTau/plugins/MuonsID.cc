@@ -107,7 +107,7 @@ MuonsID::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    edm::Handle<edm::View<pat::Muon> > pMuons;
    iEvent.getByToken(muonTag_, pMuons);
-
+   int runNum = iEvent.run();
    std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
    if (pMuons->size() < 1)
      return 0;
@@ -115,12 +115,26 @@ MuonsID::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
    {
      for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
      {
-//       if (muon::isLooseMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
-       if (muon::isMediumMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
+       if (runNum >= 278820 && runNum <= 284044)
        {
-         CountMuon+=1;
-         muonColl->push_back(*iMuon);
-       }//if
+         bool goodGlob = iMuon->isGlobalMuon() && iMuon->globalTrack()->normalizedChi2() < 3 && 
+                         iMuon->combinedQuality().chi2LocalPosition < 12 && iMuon->combinedQuality().trkKink < 20; 
+         bool isMedium = muon::isLooseMuon(*iMuon) && iMuon->innerTrack()->validFraction() > 0.8 && 
+                         muon::segmentCompatibility(*iMuon) > (goodGlob ? 0.303 : 0.451);
+         if (iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0 && isMedium)
+         {
+           CountMuon+=1;
+           muonColl->push_back(*iMuon);
+         }//if iMed Mu
+       }//if EraG or H
+       else
+       {
+         if (muon::isMediumMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
+         {
+           CountMuon+=1;
+           muonColl->push_back(*iMuon);
+         }//if iMed Mu
+       }//if Era A->F
      } //for iMuon
    }// if muonID
    else throw cms::Exception("CustomMuonSelector") << "Error: unsupported muon1 ID.\n";
