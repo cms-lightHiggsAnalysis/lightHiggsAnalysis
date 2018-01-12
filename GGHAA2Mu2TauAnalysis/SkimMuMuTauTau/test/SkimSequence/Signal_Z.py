@@ -1,8 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 from subprocess import *
 import FWCore.Utilities.FileUtils as FileUtils
-mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/test.txt')
-process = cms.Process("SKIM")
+from PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cfi import *
+mylist=FileUtils.loadListFromFile('/afs/cern.ch/work/m/mshi/private/CMSSW_8_0_17/src/CollectEXO/DataMini.txt')
+process = cms.Process("MINIAODSKIM")
 #Debug utils
 #process.ProfilerService = cms.Service (
 #      "ProfilerService",
@@ -180,59 +181,14 @@ skimEventContent = cms.PSet(
     )
   ) 
 
-# b-tagging general configuration
-process.load("RecoBTag.Configuration.RecoBTag_cff")
-process.load("RecoJets.JetAssociationProducers.ak4JTA_cff")
-# configure the softMuonByIP3d ESProducer and EDProducer
-from RecoBTag.Configuration.RecoBTag_cff import *
-from RecoBTag.SoftLepton.softLepton_cff import *
-from RecoBTag.ImpactParameter.impactParameter_cff import *
-from RecoBTag.SecondaryVertex.secondaryVertex_cff import *
-process.impactParameterTagInfos=process.impactParameterTagInfos.clone()
-process.impactParameterTagInfos.jetTracks = cms.InputTag("ak4JetTracksAssociatorAtVertex")
-process.ak4JetTracksAssociatorAtVertex.jets = cms.InputTag('CleanJets','ak4PFJetsNoMu','SKIM')
-process.ak4JetTracksAssociatorAtVertex.tracks = cms.InputTag("generalTracks")
-
-	
-process.btagging = cms.Sequence(
-    process.ak4JetTracksAssociatorAtVertex*
-    # impact parameters and IP-only algorithms
-    process.impactParameterTagInfos*
-    (process.trackCountingHighEffBJetTags +
-     process.trackCountingHighPurBJetTags +
-     process.jetProbabilityBJetTags +
-     process.jetBProbabilityBJetTags +
-     # SV tag infos depending on IP tag infos, and SV (+IP) based algos
-     process.secondaryVertexTagInfos*
-     (process.simpleSecondaryVertexHighEffBJetTags +
-      process.simpleSecondaryVertexHighPurBJetTags 
-#+
-     # process.combinedSecondaryVertexBJetTags
-     ) +
-     process.ghostTrackVertexTagInfos*
-     process.ghostTrackBJetTags)##  +
-##     process.softPFMuonsTagInfos*
-##     process.softPFMuonBJetTags *
-##     process.softPFElectronsTagInfos*
-##     process.softPFElectronBJetTags
-)
-#only proceed if event is a true W-->munu event
-
 #require event to fire IsoMu24_eta2p1
 process.TriggerAnalyzer0=cms.EDAnalyzer("TriggerAnalyzer")
 process.HLTEle =cms.EDFilter("HLTHighLevel",
      TriggerResultsTag = cms.InputTag("TriggerResults","","HLT"),
-     #HLTPaths = cms.vstring("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*" ),
-     #HLTPaths = cms.vstring("HLT_Mu7p5_Track7_Upsilon_v*", "HLT_Mu7p5_Track3p5_Upsilon_v*","HLT_Mu7p5_Track2_Upsilon_v*", "HLT_Mu7p5_L2Mu2_Upsilon_v*","HLT_Dimuon8_Upsilon_Barrel_v*","HLT_Dimuon13_Upsilon_v*","HLT_Dimuon0_Upsilon_Muon_v*" ),
      HLTPaths = cms.vstring("HLT_IsoMu24_v*","HLT_IsoTkMu24_v*"),
      eventSetupPathsKey = cms.string(''),
      andOr = cms.bool(True), #----- True = OR, False = AND between the HLTPaths
      throw = cms.bool(False) # throw exception on unknown path names
-)
-process.hTozzTo4leptonsMuonCalibrator = cms.EDProducer("HZZ4LeptonsMuonCalibrator",
-    muonCollection = cms.InputTag("muons"),
-    identifier = cms.string("DATA_80X_13TeV"),
-    isData         = cms.bool(True)
 )
 process.RandomNumberGeneratorService = cms.Service(
     "RandomNumberGeneratorService",
@@ -243,233 +199,32 @@ process.RandomNumberGeneratorService = cms.Service(
 )
 
 process.RochesterCorr=cms.EDProducer("Rochester",
-    muonCollection = cms.InputTag("muons"),
+    muonCollection = cms.InputTag("slimmedMuons"),
     identifier = cms.string("DATA_80X_13TeV"),
     isData         = cms.bool(True),
     initialSeed = cms.untracked.uint32(89),
     engineName = cms.untracked.string('TRandom3'),
     fp=cms.FileInPath("Rochester/RochesterSub/data/rcdata.2016.v3/config.txt")
 )   
-MU_CUT=("pt>5.0 && abs(eta)<2.4")
-process.PreMuons = cms.EDFilter('MuonRefSelector',
-                                 src = cms.InputTag("RochesterCorr","RochesterMu","SKIM"),
-                                 cut = cms.string(MU_CUT),
-                                 filter = cms.bool(True)
-)
-process.Mu45Selector = cms.EDFilter(
-    'MuonTriggerObjectFilter',
-    recoObjTag = cms.InputTag('MuonIWant'),
-    genParticleTag = cms.InputTag('genParticles'),
-    triggerEventTag = cms.untracked.InputTag("hltTriggerSummaryAOD", "", "HLT"),
-    triggerResultsTag = cms.untracked.InputTag("TriggerResults", "", "HLT"),
-    MatchCut = cms.untracked.double(0.1),
-    hltTags = cms.VInputTag(cms.InputTag("HLT_Mu50_v3", "", "HLT")
-                            ),
-    theRightHLTTag = cms.InputTag("HLT_Mu50_v3","","HLT"),#TTBar background is v2
-    #theRightHLTSubFilter1 = cms.InputTag("hltL3fL1sMu16orMu25L1f0L2f10QL3Filtered45e2p1Q","","HLT2"),#v2
-    theRightHLTSubFilter1 = cms.InputTag("hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q","","HLT"),
-    HLTSubFilters = cms.untracked.VInputTag(""),
-    minNumObjsToPassFilter1= cms.uint32(1),
-    outFileName=cms.string("Mu45Selector.root")
+process.PreMuons = cms.EDFilter('PTETACUT',
+            muonTag=cms.InputTag("RochesterCorr","RochesterMu"),
+            Eta=cms.double(2.4),
+            Pt=cms.double(5.0),
+            minNumObjsToPassFilter=cms.uint32(2)
 )
 process.AllPreMuonsID=cms.EDFilter(
   'MuonsID',
   muonTag=cms.InputTag('PreMuons'),
-  vtxTag= cms.InputTag('offlinePrimaryVertices'),
   muonID=cms.string('medium')
-)
-process.Isolate=cms.EDFilter('CustomDimuonSelector',
-                                muonTag=cms.InputTag('AllPreMuonsID'),
-                                isoMax=cms.double(0.25),
-                                isoMin=cms.double(0.0),
-                                baseMuonTag=cms.InputTag('muons'),
-                                particleFlow=cms.InputTag('particleFlow'),
-                                minNumObjsToPassFilter=cms.uint32(2)
 )
 process.HighestPtAndMuonSignDRSelector=cms.EDFilter(
                 'HighestPtAndMuonSignDRSelector',
                 muonTag=cms.InputTag('AllPreMuonsID'),
                 dRCut=cms.double(-1),
                 passdR=cms.bool(True),
-                Mu1PtCut=cms.double(20.0),
+                Mu1PtCut=cms.double(25.0),
                 Mu2PtCut=cms.double(20.0),
                 oppositeSign = cms.bool(True) # False for SameSignDiMu, True regular
-)
-process.NonIsolate=cms.EDFilter('CustomDimuonSelector',
-				muonTag=cms.InputTag('Mu1Mu2EtaCut'),
-				isoMax=cms.double(-1),
-				isoMin=cms.double(1.0),
-				baseMuonTag=cms.InputTag('muons'),
-				particleFlow=cms.InputTag('particleFlow'),
-				minNumObjsToPassFilter=cms.uint32(2)
-)
-process.PtEtaCut = cms.EDFilter('PTETACUT',
-                                 muonTag=cms.InputTag('Isolate'),
-                                 Eta=cms.double(-1),
-                                 Pt=cms.double(0.0),
-                                 minNumObjsToPassFilter=cms.uint32(1)
-)
-                                
-
-process.Mu3=cms.EDFilter('VetoMuon',
-  muonTag=cms.InputTag('MuonIWant'),
-  vetoMuonTag=cms.InputTag('Mu1Mu2EtaCut'),
-  dRCut=cms.double(0.5),
-  minNumObjsToPassFilter=cms.uint32(1)
-)
-
-process.Mu3ID = cms.EDFilter('CustomMuonSelector',
-                                       baseMuonTag = cms.InputTag('muons'),
-                                       muonTag = cms.InputTag('Mu3'),
-                                       vtxTag = cms.InputTag('offlinePrimaryVertices'),
-                                       muonID = cms.string('loose'),
-                                       PFIsoMax = cms.double(-1),
-                                       detectorIsoMax = cms.double(-1.0),
-                                       PUSubtractionCoeff = cms.double(0.5),
-                                       usePFIso = cms.bool(True),
-                                       passIso = cms.bool(True),
-                                       etaMax = cms.double(2.4),
-                                       minNumObjsToPassFilter = cms.uint32(1)
-                                       )
-process.tauMuonPtSelector=cms.EDFilter('PTETACUT',
-                                 muonTag=cms.InputTag('Mu3ID'),
-                                 Eta=cms.double(2.4),
-                                 Pt=cms.double(5.0),
-                                 minNumObjsToPassFilter=cms.uint32(1)
-)
-
-#clean the jets of soft muons, then rebuild the taus
-
-process.CleanJets.muonSrc=cms.InputTag('tauMuonPtSelector') # 
-process.CleanJets.PFCandSrc = cms.InputTag('particleFlow')
-process.CleanJets.cutOnGenMatches = cms.bool(False)
-process.CleanJets.outFileName = cms.string('CleanJets.root')
-process.ak4PFJetTracksAssociatorAtVertex.jets = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.recoTauAK4PFJets08Region.src = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.ak4PFJetsLegacyHPSPiZeros.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.ak4PFJetsRecoTauChargedHadrons.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.combinatoricRecoTaus.jetSrc = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-
-process.recoTauCommonSequence = cms.Sequence(   process.Mu3*
-						process.Mu3ID*
-						process.tauMuonPtSelector*
-						process.CleanJets*
-						process.ak4PFJetTracksAssociatorAtVertex*
-						process.recoTauAK4PFJets08Region*
-						process.recoTauPileUpVertices*
-						process.pfRecoTauTagInfoProducer
-)
-
-process.PFTau = cms.Sequence(process.recoTauCommonSequence*process.recoTauClassicHPSSequence) # Kyle Changed  This
-
-from RecoBTag.Configuration.RecoBTag_cff import *
-from RecoBTag.SoftLepton.softLepton_cff import *
-from RecoBTag.ImpactParameter.impactParameter_cff import *
-from RecoBTag.SecondaryVertex.secondaryVertex_cff import *
-from RecoBTag.Combined.combinedMVA_cff import *
-from RecoBTag.CTagging.RecoCTagging_cff import *
-from RecoVertex.AdaptiveVertexFinder.inclusiveVertexing_cff import *
-process.pfImpactParameterTagInfos.jets = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.softPFMuonsTagInfos.jets = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-process.softPFElectronsTagInfos.jets = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM')
-
-process.pfBTagging = cms.Sequence(
-    (
-      # impact parameters and IP-only algorithms
-      pfImpactParameterTagInfos *
-      ( pfTrackCountingHighEffBJetTags +
-        pfJetProbabilityBJetTags +
-        pfJetBProbabilityBJetTags +
-
-        # SV tag infos depending on IP tag infos, and SV (+IP) based algos
-        pfSecondaryVertexTagInfos *
-        ( pfSimpleSecondaryVertexHighEffBJetTags +
-          pfCombinedSecondaryVertexV2BJetTags
-        )
-        + inclusiveCandidateVertexing *
-        pfInclusiveSecondaryVertexFinderTagInfos *
-        pfSimpleInclusiveSecondaryVertexHighEffBJetTags *
-        pfCombinedInclusiveSecondaryVertexV2BJetTags
-
-      ) +
-
-      # soft lepton tag infos and algos
-      softPFMuonsTagInfos *
-      softPFMuonBJetTags
-      + softPFElectronsTagInfos *
-      softPFElectronBJetTags
-    ) *
-
-    # overall combined taggers
-    ( #CSV + soft-lepton + jet probability discriminators combined
-      pfCombinedMVAV2BJetTags
-
-    )
-)
-
-#find taus in |eta| < 2.4 matched to muon-tagged cleaned jets
-#this will produce a ref to the cleaned tau collection
-process.muHadTauSelector = cms.EDFilter(
-    'CustomTauSepFromMuonSelector',
-    baseTauTag = cms.InputTag('hpsPFTauProducer', '', 'SKIM'),
-    tauHadIsoTag = cms.InputTag('hpsPFTauDiscriminationByCombinedIsolationDeltaBetaCorrRaw3Hits', '',
-                                'SKIM'),
-    tauDiscriminatorTags = cms.VInputTag(
-    cms.InputTag('hpsPFTauDiscriminationByDecayModeFindingNewDMs', '', 'SKIM')
-    ),
-    jetTag = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM'),
-    muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
-    overlapCandTag = cms.InputTag('Mu45Selector'),
-    overlapCandTag1= cms.InputTag('Mu1Mu2EtaCut'),
-    passDiscriminator = cms.bool(True),
-    pTMin = cms.double(10.0),
-    etaMax = cms.double(2.4),
-    isoMax = cms.double(-1.0),
-    dR = cms.double(0.5),
-    minNumObjsToPassFilter = cms.uint32(1),
-    outFileName=cms.string('muHadTauSelector.root')
-    )
-process.muHadIsoTauSelector = cms.EDFilter(
-    'CustomTauSepFromMuonSelector',
-    baseTauTag = cms.InputTag('hpsPFTauProducer', '', 'SKIM'),
-    tauHadIsoTag = cms.InputTag('hpsPFTauDiscriminationByCombinedIsolationDeltaBetaCorrRaw3Hits', '',
-                                'SKIM'),
-    tauDiscriminatorTags = cms.VInputTag(
-    cms.InputTag('hpsPFTauDiscriminationByDecayModeFindingNewDMs', '', 'SKIM'),
-    ),
-    jetTag = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM'),
-    muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
-    overlapCandTag = cms.InputTag('Mu45Selector','','SKIM'),
-    overlapCandTag1=cms.InputTag('Mu1Mu2EtaCut','','SKIM'),
-    passDiscriminator = cms.bool(True),
-    pTMin=cms.double(10.0),
-    etaMax = cms.double(2.4),
-    isoMax = cms.double(-1.0),
-    dR = cms.double(0.5),
-    minNumObjsToPassFilter = cms.uint32(1),
-    outFileName=cms.string('muHadIsoTauSelector.root')
-    )
-
-process.muHadNonIsoTauSelector = cms.EDFilter(
-    'CustomTauSepFromMuonSelector',
-    tauTag = cms.InputTag('muHadTauSelector','','SKIM'),
-    baseTauTag = cms.InputTag('hpsPFTauProducer', '', 'SKIM'),
-    tauHadIsoTag = cms.InputTag('hpsPFTauDiscriminationByCombinedIsolationDeltaBetaCorrRaw3Hits', '',
-                                'SKIM'),
-    tauDiscriminatorTags = cms.VInputTag(
-    cms.InputTag('hpsPFTauDiscriminationByIsolationMVArun2v1PWnewDMwLTraw', '', 'SKIM')
-    ),
-    jetTag = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM'),
-    muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
-    overlapCandTag = cms.InputTag('Mu45Selector'),
-    overlapCandTag1=cms.InputTag('Mu1Mu2EtaCut','','SKIM'),
-    passDiscriminator = cms.bool(False),
-    pTMin=cms.double(10.0),
-    etaMax = cms.double(2.4),
-    isoMax = cms.double(-1.0),
-    dR = cms.double(0.5),
-    minNumObjsToPassFilter = cms.uint32(1),
-    outFileName=cms.string('muHadNoIsoTauSelector.root')
 )
 process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
                                     Mu1Mu2=cms.InputTag('HighestPtAndMuonSignDRSelector'),
@@ -478,14 +233,19 @@ process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
 )
 process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   'Mu1Mu2Analyzer',
-  Mu1Mu2=cms.InputTag("MassCut",'','SKIM'),
+  Mu1Mu2=cms.InputTag("MassCut",'','MINIAODSKIM'),
   Mu2PtBins=cms.vdouble(x for x in range(0, 200)),
   invMassBins=cms.vdouble(x for x in range(60, 120)),
   MC=cms.bool(False),
-  pfMet=cms.InputTag("pfMet","","RECO"),
-  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileupWeightForEraC.root"),
+  pfMet=cms.InputTag("slimmedMETs"),
+  fp=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/pileup.root"),
+  fpIDs_BToF=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_BCDEF.root"),
+  fpIDs_GH=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_GH.root"),
+  fpISOs_BToF=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_BCDEF_ISO.root"),
+  fpISOs_GH=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_GH_ISO.root"),
+  fpTrack=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/Tracking_EfficienciesAndSF_BCDEFGH.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
-  Generator=cms.InputTag("generator","","SIM")
+  Generator=cms.InputTag("generator")
 )
 process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
 #sequences
@@ -497,8 +257,7 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.AllPreMuonsID*
         process.HighestPtAndMuonSignDRSelector*
         process.MassCut*
-        process.Mu1Mu2Analyzer*
-        process.GetRunNumber
+        process.Mu1Mu2Analyzer
 )
 
 
