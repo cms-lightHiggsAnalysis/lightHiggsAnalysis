@@ -79,8 +79,6 @@ private:
 
   //input tag for overlap candidate collection
   edm::EDGetTokenT<edm::View<pat::Muon> > overlapMuonTag_;
-//  edm::EDGetTokenT<edm::RefVector<std::vector<T> > > overlapCandTag_;
-//  edm::EDGetTokenT<edm::RefVector<std::vector<T> > > overlapCandTag1_;
 
   //input for checking for nearby muon
   edm::EDGetTokenT<edm::View<pat::Muon> > muons_;
@@ -101,24 +99,16 @@ private:
   double isoMax_;
 
   //overlap candidate matching cut
-  double dR_;
+  double dROverlapMin_;
 
   //minimum number of objects that must be found to pass the filter
   unsigned int minNumObjsToPassFilter_;
   
   // dR cone to look if muon was removed or nearby, indicating a di-tau object
-  double diTaudR_;
+  double diTaudRMax_;
 
-  //  std::map<std::string, TH1D*> histos1D_;
-  TFile *out_;
-  TH1F *TauPt_;
-  TH1F *NPassing_;
-  TH1F *TauHadTauMudR_;
-  TH1F *TauHadAllMudR_;
-  TH1F *TauHadEta_;
-  TH2F *NTauPassvsNTau_;
- 
-  std::string  outFileName_;
+  std::map<std::string, TH1D*> histos1D_;
+  std::map<std::string, TH2D*> histos2D_;
 };
 
 //
@@ -139,21 +129,17 @@ CustomTauSelector<T>::CustomTauSelector(const edm::ParameterSet& iConfig) :
   baseTauTag_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("baseTauTag"))),
   tauHadIsoTag_(iConfig.getParameter<std::string>("tauHadIsoTag")),
   overlapMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("overlapMuonTag"))),
-//  overlapCandTag_(iConfig.existsAs<edm::InputTag>("overlapCandTag") ? 
-//		  consumes<edm::RefVector<std::vector<T> > >(iConfig.getParameter<edm::InputTag>("overlapCandTag")) : edm::EDGetTokenT<edm::RefVector<std::vector<T> > >()),
-//  overlapCandTag1_(iConfig.existsAs<edm::InputTag>("overlapCandTag1") ?
-//                  consumes<edm::RefVector<std::vector<T> > >(iConfig.getParameter<edm::InputTag>("overlapCandTag1")) : edm::EDGetTokenT<edm::RefVector<std::vector<T> > >()),
   muons_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muons"))),
   tauDiscriminatorTags_(iConfig.getParameter<std::vector<std::string> >("tauDiscriminatorTags")),
   passDiscriminator_(iConfig.getParameter<bool>("passDiscriminator")),
   pTMin_(iConfig.getParameter<double>("pTMin")),
   etaMax_(iConfig.getParameter<double>("etaMax")),
   isoMax_(iConfig.getParameter<double>("isoMax")),
-  dR_(iConfig.getParameter<double>("dR")),
+  dROverlapMin_(iConfig.getParameter<double>("dROverlapMin")),
   minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter")),
-  diTaudR_(iConfig.getParameter<double>("diTaudR")),
-  outFileName_(iConfig.getParameter<std::string>("outFileName"))
-//  histos1D_()
+  diTaudRMax_(iConfig.getParameter<double>("diTaudRMax")),
+  histos1D_(),
+  histos2D_()
 {
 
   produces<std::vector<pat::Tau> >();
@@ -189,29 +175,6 @@ bool CustomTauSelector<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<pat::TauCollection> pBaseTaus;
   iEvent.getByToken(baseTauTag_, pBaseTaus);
 
-//  //get overlap candidates
-//  edm::Handle<edm::RefVector<std::vector<T> > > pOverlapCands;
-//  if (overlapCandTag_.isUninitialized()) {}
-//  else iEvent.getByToken(overlapCandTag_, pOverlapCands);
-//
-//  edm::Handle<edm::RefVector<std::vector<T> > > pOverlapCands1;
-//  if (overlapCandTag1_.isUninitialized()) {}
-//  else iEvent.getByToken(overlapCandTag1_, pOverlapCands1);
-//
-//  //fill STL container of pointers to overlap candidates
-//  std::vector<T*> overlapCandPtrs;
-//  if (pOverlapCands.isValid())
-//  {
-//    for (typename edm::RefVector<std::vector<T> >::const_iterator iOverlapCand = pOverlapCands->begin(); iOverlapCand != pOverlapCands->end(); ++iOverlapCand)
-//      overlapCandPtrs.push_back(const_cast<T*>(iOverlapCand->get()));
-//  }
-//  std::vector<T*> overlapCandPtrs1;
-//  if (pOverlapCands1.isValid())
-//  {
-//    for (typename edm::RefVector<std::vector<T> >::const_iterator iOverlapCand1 = pOverlapCands1->begin(); iOverlapCand1 != pOverlapCands1->end(); ++iOverlapCand1)
-//      overlapCandPtrs1.push_back(const_cast<T*>(iOverlapCand1->get()));
-//  }
-
   //get base muon collection
   edm::Handle<edm::View<pat::Muon> > pOverlapMuons;
   iEvent.getByToken(overlapMuonTag_, pOverlapMuons);
@@ -246,36 +209,30 @@ bool CustomTauSelector<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSe
         minDR = dR;
       }// if dR  < minDR
     }//for iOverlapCand
-//      //find the nearest overlap candidate to the tau
-//      int nearestMuonIndex = -1;
-//      int nearestMuonIndex1 = -1;
-//      const reco::Candidate* nearestMuon = Common::nearestObject(iTau, overlapCandPtrs, nearestMuonIndex);
-//      const reco::Candidate* nearestMuon1 = Common::nearestObject(iTau, overlapCandPtrs1, nearestMuonIndex1);
 
     //if tau doesn't overlap with overlap candidate (or no overlap checking requested)...
-    if (reco::deltaR(*iTau, nearestMuon) > dR_) 
+    if (reco::deltaR(*iTau, nearestMuon) > dROverlapMin_) 
     {
       double bestdR = 1000000000;
       for (edm::View<pat::Muon>::const_iterator iMu = pMuons->begin(); iMu != pMuons->end(); ++iMu)
       {
         double dR = reco::deltaR(*iTau, *iMu);
-        TauHadAllMudR_->Fill(dR );
-        if (dR < diTaudR_ && dR < bestdR)
+        histos1D_["TauHadAllMudR"]->Fill(dR );
+        if (dR < diTaudRMax_ && dR < bestdR)
           bestdR = dR;
       }//for iMu
-      TauHadTauMudR_->Fill(bestdR );
-      TauHadEta_->Fill(iTau->eta() );
-      TauPt_->Fill(iTau->pt());
+      histos1D_["TauHadTauMudR"]->Fill(bestdR );
+      histos1D_["TauHadEta"]->Fill(iTau->eta() );
+      histos1D_["TauPt"]->Fill(iTau->pt());
       tauColl->push_back(*iTau);
       ++nPassingTaus;
     }//if pOverlapCands
   }
   iEvent.put(tauColl);
 
-
   //if not enough taus passing cuts were found in this event, stop processing
-  NPassing_->Fill((nPassingTaus >= minNumObjsToPassFilter_));
-  NTauPassvsNTau_->Fill(nPassingTaus, taus.size() );
+  histos1D_["NPassing"]->Fill((nPassingTaus >= minNumObjsToPassFilter_));
+  histos2D_["NTauPassvsNTau"]->Fill(nPassingTaus, taus.size() );
   return (nPassingTaus >= minNumObjsToPassFilter_);
 }
 
@@ -283,44 +240,18 @@ bool CustomTauSelector<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSe
 template<class T>
 void CustomTauSelector<T>::beginJob()
 {
-  out_ = new TFile(outFileName_.c_str(), "RECREATE");
-  TauPt_ = new TH1F("TauPt", "TauPt",100,0,300);
-  NPassing_ = new TH1F("nPassing","nPassing",2,0,2);
-  TauHadTauMudR_ = new TH1F("TauHadTauMudR", "TauHadTauMudR", 100, 0, 1.0);
-  TauHadAllMudR_ = new TH1F("TauHadAllMudR", "TauHadAllMudR", 100, 0, 1.0);
-  TauHadEta_ = new TH1F("TauHadEta", "TauHadEta", 100, 2.5, 2.5);
-  NTauPassvsNTau_ = new TH2F("NTauPassvsNTau", "NTauPassvsNTau", 10, -.5, 9.5, 10, -.5, 9.5);
-
+  edm::Service<TFileService> fileService;
+  histos1D_["TauPt"]=fileService->make<TH1D>("TauPt", "TauPt",100,0,300);
+  histos1D_["NPassing"]=fileService->make<TH1D>("nPassing","nPassing",2,0,2);
+  histos1D_["TauHadTauMudR"]=fileService->make<TH1D>("TauHadTauMudR", "TauHadTauMudR", 100, 0, 1.0);
+  histos1D_["TauHadAllMudR"]=fileService->make<TH1D>("TauHadAllMudR", "TauHadAllMudR", 100, 0, 1.0);
+  histos1D_["TauHadEta"]=fileService->make<TH1D>("TauHadEta", "TauHadEta", 100, 2.5, 2.5);
+  histos2D_["NTauPassvsNTau"]=fileService->make<TH2D>("NTauPassvsNTau", "NTauPassvsNTau", 10, -.5, 9.5, 10, -.5, 9.5);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 template<class T>
 void CustomTauSelector<T>::endJob() {
-  out_->cd();
-
-  TCanvas TauPtCanvas_("TauPtCanvas","",600,600);
-  TCanvas NPassingCanvas_("NPassingCanvas","",600,600);
-  TCanvas TauHadTauMudRCanvas_("TauHadTauMudRCanvas","",600,600);
-  TCanvas TauHadAllMudRCanvas_("TauHadAllMudRCanvas","",600,600);
-  TCanvas TauHadEtaCanvas_("TauHadEtaCanvas","",600,600);
-  TCanvas NTauPassvsNTauCanvas_("NTauPassvsNTauCanvas","",600,600);
-
-  Common::draw1DHistograms(TauPtCanvas_, TauPt_);
-  Common::draw1DHistograms(NPassingCanvas_, NPassing_);
-  Common::draw1DHistograms(TauHadTauMudRCanvas_, TauHadTauMudR_);
-  Common::draw1DHistograms(TauHadAllMudRCanvas_, TauHadAllMudR_);
-  Common::draw1DHistograms(TauHadEtaCanvas_, TauHadEta_);
-  Common::draw2DHistograms(NTauPassvsNTauCanvas_, NTauPassvsNTau_);
-
-  TauPtCanvas_.Write();
-  NPassingCanvas_.Write();
-  TauHadTauMudRCanvas_.Write();
-  TauHadAllMudRCanvas_.Write();
-  TauHadEtaCanvas_.Write();
-  NTauPassvsNTauCanvas_.Write();
-
-  out_->Write();
-  out_->Close();
 }
 
 // ------------ method called when starting to processes a run  ------------

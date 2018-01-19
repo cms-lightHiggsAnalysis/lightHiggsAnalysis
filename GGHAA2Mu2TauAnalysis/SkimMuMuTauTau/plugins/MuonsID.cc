@@ -60,9 +60,9 @@ class MuonsID : public edm::EDFilter {
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
-      // ----------member data ---------------------------
-edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_; 
-std::string muonID_;
+       // ----------member data ---------------------------
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_; 
+  std::string muonID_;
 };
 
 //
@@ -107,28 +107,40 @@ MuonsID::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    edm::Handle<edm::View<pat::Muon> > pMuons;
    iEvent.getByToken(muonTag_, pMuons);
-
+   int runNum = iEvent.run();
    std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
-   if(pMuons->size() < 1)
+   if (pMuons->size() < 1)
      return 0;
-   if(muonID_=="medium")
+   if (muonID_=="medium")
    {
      for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
      {
-       if (iMuon->muonBestTrack()->dxy() > 0.5 || iMuon->muonBestTrack()->dz() > 1.0)
-         continue;
-       reco::MuonPFIsolation iso = iMuon->pfIsolationR04(); 
-       double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/iMuon->pt();
-       if(muon::isLooseMuon(*iMuon) && reliso<0.25)
+       if (runNum >= 278820 && runNum <= 284044)
        {
-         CountMuon+=1;
-         muonColl->push_back(*iMuon);
-       }//if isLooseMuon
+         bool goodGlob = iMuon->isGlobalMuon() && iMuon->globalTrack()->normalizedChi2() < 3 && 
+                         iMuon->combinedQuality().chi2LocalPosition < 12 && iMuon->combinedQuality().trkKink < 20; 
+         bool isMedium = muon::isLooseMuon(*iMuon) && iMuon->innerTrack()->validFraction() > 0.8 && 
+                         muon::segmentCompatibility(*iMuon) > (goodGlob ? 0.303 : 0.451);
+         if (iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0 && isMedium)
+         {
+           CountMuon+=1;
+           muonColl->push_back(*iMuon);
+         }//if iMed Mu
+       }//if EraG or H
+       else
+       {
+         if (muon::isMediumMuon(*iMuon) && iMuon->muonBestTrack()->dxy() < 0.5 && iMuon->muonBestTrack()->dz() < 1.0)
+         {
+           CountMuon+=1;
+           muonColl->push_back(*iMuon);
+         }//if iMed Mu
+       }//if Era A->F
      } //for iMuon
    }// if muonID
    else throw cms::Exception("CustomMuonSelector") << "Error: unsupported muon1 ID.\n";
 
-   if(CountMuon>=2){
+   if (CountMuon>=2)
+   {
      iEvent.put(muonColl);
      return true;
    }

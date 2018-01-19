@@ -64,7 +64,7 @@ class VetoMuon : public edm::EDFilter {
       // ----------member data ---------------------------
  edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_;
  edm::EDGetTokenT<edm::View<pat::Muon> > vetoMuonTag_;
- double Cut_; 
+ double dRCut_; 
  unsigned int minNumObjsToPassFilter_;
 };
 
@@ -82,7 +82,7 @@ class VetoMuon : public edm::EDFilter {
 VetoMuon::VetoMuon(const edm::ParameterSet& iConfig):
   muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
  vetoMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("vetoMuonTag"))),
-  Cut_(iConfig.getParameter<double>("dRCut")),
+  dRCut_(iConfig.getParameter<double>("dRCut")),
  minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter"))
 {
 
@@ -125,16 +125,18 @@ VetoMuon::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     {
       if(deltaR(*iMuon, *iVetoMuons) < 0.0001 && ( (iMuon->pt()-iVetoMuons->pt()) / iVetoMuons->pt() ) < 0.0001)
         continue;
-      else if(deltaR(*iMuon, *iVetoMuons) < Cut_)
+      else if(deltaR(*iMuon, *iVetoMuons) < dRCut_)
         continue;
       else count++;
-  
     }//for iVetoMuons
+
     if (count == pVetoMuons->size() )
     {
       muonColl->push_back(*iMuon);
-      ++nPassingMuons;}
-  }
+      ++nPassingMuons;
+    }//if count
+  }//for iMuon
+
   iEvent.put(muonColl);
   return (nPassingMuons >= minNumObjsToPassFilter_);
 }

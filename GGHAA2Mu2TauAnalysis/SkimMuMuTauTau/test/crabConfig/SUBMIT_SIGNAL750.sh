@@ -15,7 +15,7 @@ echo "Set Environment"
 DATE=`date +TIME_%H-%M-%S__DATE_%y-%m-%d`
 FILENAME="CRAB_SUBMIT_ALL_${new_tag}_${DATE}.txt"
 
-sed -i "s|${old_tag}|${new_tag}|g" crabConf*
+#sed -i "s|${old_tag}|${new_tag}|g" crabConf*
 echo "Sed-ed"
 
 mass=5

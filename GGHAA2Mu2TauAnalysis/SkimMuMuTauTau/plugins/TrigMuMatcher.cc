@@ -68,13 +68,13 @@ class TrigMuMatcher : public edm::EDFilter {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
-  edm::EDGetTokenT<edm::View<pat::Muon> > mu12Tag_;
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonsTag_;
   edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
   edm::EDGetTokenT<pat::PackedTriggerPrescales> triggerPrescales_; 
   edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone> > triggerObjects_;
   std::vector<std::string> trigNames_;
   double dRCut_; 
-  bool checkMatchMu1_;
+  double mu1PtCut_; 
 
   std::map<std::string, TH1D*> histos1D_;
   std::map<std::string, TH2D*> histos2D_;
@@ -93,13 +93,13 @@ class TrigMuMatcher : public edm::EDFilter {
 // constructors and destructor
 //
 TrigMuMatcher::TrigMuMatcher(const edm::ParameterSet& iConfig):
-  mu12Tag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("mu12Tag"))),
+  muonsTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonsTag"))),
   triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("bits"))),
   triggerPrescales_(consumes<pat::PackedTriggerPrescales>(iConfig.getParameter<edm::InputTag>("prescales"))),
   triggerObjects_(consumes<std::vector<pat::TriggerObjectStandAlone> >(iConfig.getParameter<edm::InputTag>("triggerObjects"))),
   trigNames_(iConfig.getParameter<std::vector<std::string> >("trigNames")),
   dRCut_(iConfig.getParameter<double>("dRCut")),
-  checkMatchMu1_(iConfig.getParameter<bool>("checkMatchMu1")),
+  mu1PtCut_(iConfig.getParameter<double>("mu1PtCut")),
   histos1D_(),
   histos2D_()
 {
@@ -129,15 +129,8 @@ TrigMuMatcher::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   using namespace edm;
   std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
-  edm::Handle<edm::View<pat::Muon> > pMu12;
-  iEvent.getByToken(mu12Tag_, pMu12);
-  double highestMuPt = -1;
-  for(edm::View<pat::Muon>::const_iterator iMuon=pMu12->begin(); iMuon!=pMu12->end();++iMuon)
-  { 
-    if (iMuon->pt() > highestMuPt)
-      highestMuPt = iMuon->pt();
-  }
-
+  edm::Handle<edm::View<pat::Muon> > pMuons;
+  iEvent.getByToken(muonsTag_, pMuons);
 
   edm::Handle<edm::TriggerResults> pTriggerBits;
   edm::Handle<pat::PackedTriggerPrescales> pTriggerPrescales; 
@@ -175,29 +168,22 @@ TrigMuMatcher::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     for (unsigned int num : corrTrigSpot) // Loop through the triggers we care about
     {
       const std::string& name = names.triggerName(num); // get name
-      if (TO.hasPathName(name, true) && !checkObjMatch) // If obj passes trigger we care about, and that an object didn't pass previous triggers in vector
+      if (TO.hasPathName(name, true) && !checkObjMatch) // If obj passes trigger we care about, and that object didn't pass previous triggers in vector
       {
         double matchedMuPt = -1, dRMatch = -1;
         int nMatches = 0;
-        for(edm::View<pat::Muon>::const_iterator iMuon=pMu12->begin(); iMuon!=pMu12->end();++iMuon) // loop through Mu1 and mu2 object
+        for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon) // loop through Mu1 and mu2 object
         { 
           double dRCurr = deltaR(*iMuon, TO);
-          if (dRCurr < dRCut_ && checkMatchMu1_ && iMuon->pt() == highestMuPt) // if dR bettween obj and iMuon is small enough, and we require highest pt match and that iMuon is highest pt
+          if (iMuon->pt() > mu1PtCut_ && dRCurr < dRCut_) // if dR bettween obj and iMuon is small enough, and we require highest pt match and that iMuon is highest pt
           {
             checkPassEvent = true;
+	    checkObjMatch = true;
             nMatches++;
             matchedMuPt = iMuon->pt();
             muonColl->push_back(*iMuon);
             dRMatch = dRCurr; 
-          }///if dR match
-     
-          else if (dRCurr < dRCut_ && !checkMatchMu1_ &&  iMuon->pt() > matchedMuPt) // The last req only matters if 2 muons match the same trigger object
-          {
-            checkPassEvent = true;
-            nMatches++;
-            matchedMuPt = iMuon->pt();
-            muonColl->push_back(*iMuon);
-            dRMatch = dRCurr; 
+            break;
           }///if dR match
         }//for iMuon
         histos1D_["nMatchesPerTrigObj"]->Fill(nMatches);
