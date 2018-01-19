@@ -13,9 +13,9 @@ ROOT.gStyle.SetPalette(1)
 import csv
 # arguments
 savename = 'zmass'
-lumi = 27256.0
+lumi = 34872.0
 xaxis = 'Pt of Mu1(GeV)'
-yaxis = 'Events Statistics(EraBCDEFG 2016)'
+yaxis = 'Events Statistics(EraBCDEFGH 2016)'
 logy = True
 logx = False
 ymin = 1
@@ -27,9 +27,9 @@ isprelim = True
 ratiomin = 0.8
 ratiomax = 1.2
 rangex = [0,300]
-Luminosity=31724.5
+Luminosity=34872.0
 # read from root file
-tfile = ROOT.TFile.Open('./RootFiles/All.root')
+tfile = ROOT.TFile.Open('./RootFiles/AllData.root')
 
 out=ROOT.TFile.Open("HistogramTitle.root", "RECREATE")
 
@@ -48,7 +48,7 @@ hash_={"pt of Mu1 Mu2 (H750a09)":["pt of reco muon", [0,300]],
 "Mu1Mu2Pt":["Mu1Mu2Pt",[0,300]],
 "Mu1Mu2Eta":["Mu1Mu2Eta",[-2.5, 2.5]],
 "Mu1PtMu2Pt":["Mu1PtMu2Pt",[0,300]],
-"pt of Mu2": ["pt of Mu2",[0,300]],
+"Pt of RecoMu2": ["pt of Mu2",[0,300]],
 "pt of Mu1": ["pt of Mu1",[0,300]],
 "dRMu1Mu2":["dRMu1Mu2",[0,5.0]],
 "dRMu1Mu2Wider":["dRMu1Mu2Wider", [0,5.0]],
@@ -57,8 +57,7 @@ hash_={"pt of Mu1 Mu2 (H750a09)":["pt of reco muon", [0,300]],
 "Eta of Mu2": ["Eta of Mu2",[-2.5, 2.5]],
 "NumVertices": ["NumVertices",[0,20]]
 }
-
-interested=["invMass of Mu1 Mu2 (H750a09)", "dRMetMu1","MetPt","Mu1Mu2Pt","Mu1Mu2Eta","Eta of Mu1","Eta of Mu2", "pt of Mu1","Mu1PtMu2Pt", "pt of Mu2", "dRMu1Mu2Wider"]
+interested=["Pt of RecoMu2", "invMass of Mu1 Mu2 (H750a09)", "dRMetMu1","MetPt","Mu1Mu2Pt","Mu1Mu2Eta","Eta of Mu1","Eta of Mu2", "pt of Mu1","Mu1PtMu2Pt", "dRMu1Mu2Wider"]
 
 def draw_one_hist(data,  stack, xaxis, rangex):
 	data.SetTitle('Observed')
@@ -200,9 +199,13 @@ for key in tlist_keys:
         lis=line.rstrip().split(',')
         print lis
         crossSection=float(lis[1])
-        summedWeights=float(lis[5])
         files.append( ROOT.TFile.Open('./RootFiles/'+lis[0]))
         mc=files[-1].Get("Mu1Mu2Analyzer/"+hash_[key.GetTitle()][0])
+        MCtree=files[-1].Get("lumiTree/LumiTree")
+        summedWeights=0.0
+        for entry in MCtree:
+	    summedWeights+=MCtree.summedWeights
+        print summedWeights
         mc.Scale(1.0/summedWeights*crossSection*Luminosity)
         mc.SetTitle(lis[2])
         mc.SetFillColor(eval(lis[3]))
