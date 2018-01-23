@@ -119,6 +119,8 @@ class Mu1Mu2Analyzer : public edm::EDAnalyzer{
         Double_t erry_down;
       };
       std::list<TrackProperties> TrackCorr;
+      edm::EDGetTokenT<bool> BadChCandFilterToken_;
+      edm::EDGetTokenT<bool> BadPFMuonFilterToken_;    
 };
 
 //
@@ -152,7 +154,9 @@ Mu1Mu2Analyzer::Mu1Mu2Analyzer(const edm::ParameterSet& iConfig):
   PUTag_(consumes<std::vector<PileupSummaryInfo> >(iConfig.getParameter<edm::InputTag>("PUTag"))),
   generator_(consumes<GenEventInfoProduct>(iConfig.existsAs<edm::InputTag>("Generator") ?
                                            iConfig.getParameter<edm::InputTag>("Generator"):
-                                           edm::InputTag()))
+                                           edm::InputTag())),
+  BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("BadChargedCandidateFilter"))),
+  BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("BadPFMuonFilter")))    
 {
    std::string FullFilePath = _fp.fullPath();
    _filePU= TFile::Open(FullFilePath.c_str());
@@ -244,6 +248,16 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
    edm::Handle<std::vector<PileupSummaryInfo> > pPU;
    if (MC_) iEvent.getByToken(PUTag_, pPU);
+   
+   edm::Handle<bool> ifilterbadChCand;
+   iEvent.getByToken(BadChCandFilterToken_, ifilterbadChCand);
+   bool  filterbadChCandidate = *ifilterbadChCand;
+
+   edm::Handle<bool> ifilterbadPFMuon;
+   iEvent.getByToken(BadPFMuonFilterToken_, ifilterbadPFMuon);
+   bool filterbadPFMuon = *ifilterbadPFMuon;
+   cout<<"filterbadCHCandidate="<<filterbadChCandidate<<std::endl;
+   cout<<"filterbadPFMuon="<<filterbadPFMuon<<std::endl; 
    //if MC do Pileup reweighting
    double pu_weight = 1.0;
    double IDs_weight=1.0;//every muon pass through "medium ID"
