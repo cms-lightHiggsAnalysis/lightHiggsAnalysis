@@ -81,7 +81,7 @@ import HLTrigger.HLTfilters.hltHighLevel_cfi as hlt
 process.load('Configuration.StandardSequences.MagneticField_cff') #I changed it from: process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff') # Kyle Added this
 process.load('TrackingTools.TransientTrack.TransientTrackBuilder_cfi') # Kyle Added this
-process.GlobalTag.globaltag = cms.string('80X_dataRun2_2016SeptRepro_v4') # CMSSW 8
+process.GlobalTag.globaltag = cms.string('80X_dataRun2_2016SeptRepro_v7') # CMSSW 8
 process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("RecoTauTag.Configuration.RecoPFTauTag_cff")
 #process.load("RecoTauTag.RecoTau.RecoTauPiZeroProducer_cfi")
@@ -180,6 +180,49 @@ skimEventContent = cms.PSet(
     "drop *_particleFlowRecHit*_*_*"
     )
   ) 
+
+from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+
+updateJetCollection(
+   process,
+   jetSource = cms.InputTag('slimmedJets'),
+   labelName = 'UpdatedJEC',
+   jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute', 'L2L3Residual']), 'None')  # Update: Safe to always add 'L2L3Residual' as MC contains dummy L2L3Residual corrections (always set to 1)
+)
+process.jecSequence = cms.Sequence(process.patJetCorrFactorsUpdatedJEC * process.updatedPatJetsUpdatedJEC)
+from PhysicsTools.PatUtils.tools.runMETCorrectionsAndUncertainties import runMetCorAndUncFromMiniAOD
+#runMetCorAndUncFromMiniAOD(process,
+#                           isData=True, # (or False),
+#                           jetCollUnskimmed = "updatedPatJetsUpdatedJEC"
+#                           )
+from RecoMET.METFilters.metFilters_cff import HBHENoiseFilterResultProducer, HBHENoiseFilter, HBHENoiseIsoFilter, hcalLaserEventFilter
+from RecoMET.METFilters.metFilters_cff import EcalDeadCellTriggerPrimitiveFilter, eeBadScFilter, ecalLaserCorrFilter, EcalDeadCellBoundaryEnergyFilter
+from RecoMET.METFilters.metFilters_cff import primaryVertexFilter, CSCTightHaloFilter, CSCTightHaloTrkMuUnvetoFilter, CSCTightHalo2015Filter, globalTightHalo2016Filter, globalSuperTightHalo2016Filter, HcalStripHaloFilter
+from RecoMET.METFilters.metFilters_cff import trackingFailureFilter, trkPOGFilters, manystripclus53X, toomanystripclus53X, logErrorTooManyClusters
+from RecoMET.METFilters.metFilters_cff import chargedHadronTrackResolutionFilter, muonBadTrackFilter
+from RecoMET.METFilters.metFilters_cff import BadChargedCandidateSummer16Filter, BadPFMuonSummer16Filter #2016 ICHEP version
+from RecoMET.METFilters.metFilters_cff import metFilters
+
+Flag_goodVertices= cms.Path(primaryVertexFilter)
+Flag_globalTightHalo2016Filter = cms.Path(globalTightHalo2016Filter)
+Flag_HBHENoiseFilter = cms.Path(HBHENoiseFilterResultProducer * HBHENoiseFilter)
+Flag_HBHENoiseIsoFilter = cms.Path(HBHENoiseFilterResultProducer * HBHENoiseIsoFilter)
+Flag_EcalDeadCellTriggerPrimitiveFilter = cms.Path(EcalDeadCellTriggerPrimitiveFilter)
+
+process.METTrigger =cms.EDFilter("HLTHighLevel",
+     TriggerResultsTag = cms.InputTag("TriggerResults","","PAT"),
+     HLTPaths = cms.vstring("Flag_goodVertices","Flag_globalTightHalo2016Filter","Flag_HBHENoiseFilter","Flag_HBHENoiseIsoFilter","EcalDeadCellTriggerPrimitiveFilter"),
+     eventSetupPathsKey = cms.string(''),
+     andOr = cms.bool(False), #----- True = OR, False = AND between the HLTPaths
+     throw = cms.bool(False) # throw exception on unknown path names
+)
+process.load('RecoMET.METFilters.BadPFMuonFilter_cfi')
+process.BadPFMuonFilter.muons = cms.InputTag("slimmedMuons")
+process.BadPFMuonFilter.PFCandidates = cms.InputTag("packedPFCandidates")
+
+process.load('RecoMET.METFilters.BadChargedCandidateFilter_cfi')
+process.BadChargedCandidateFilter.muons = cms.InputTag("slimmedMuons")
+process.BadChargedCandidateFilter.PFCandidates = cms.InputTag("packedPFCandidates")
 
 #require event to fire IsoMu24_eta2p1
 process.TriggerAnalyzer0=cms.EDAnalyzer("TriggerAnalyzer")
@@ -281,12 +324,16 @@ process.Mu1Mu2Analyzer=cms.EDAnalyzer(
   fpTrigger_BToF=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_RunBtoF.root"),
   fpTrigger_GH=cms.FileInPath("GGHAA2Mu2TauAnalysis/AMuTriggerAnalyzer/data/EfficienciesAndSF_Period4.root"),
   PUTag=cms.InputTag("addPileupInfo","","HLT"),
-  Generator=cms.InputTag("generator")
+  Generator=cms.InputTag("generator"),
+  BadChargedCandidateFilter=cms.InputTag("BadChargedCandidateFilter"),
+  BadPFMuonFilter=cms.InputTag("BadPFMuonFilter")
 )
 process.GetRunNumber = cms.EDAnalyzer('GetRunNumber')
 #sequences
 process.MuMuSequenceSelector=cms.Sequence(
         #process.TriggerAnalyzer0*
+        process.jecSequence*
+        process.METTrigger*
         process.HLTEle*
         process.RochesterCorr*
         process.PreMuons*
@@ -298,6 +345,8 @@ process.MuMuSequenceSelector=cms.Sequence(
         process.GetMuTwo*
         process.Mu1Mu2*
         process.MassCut*
+        process.BadPFMuonFilter *
+        process.BadChargedCandidateFilter *
         process.Mu1Mu2Analyzer
 )
 

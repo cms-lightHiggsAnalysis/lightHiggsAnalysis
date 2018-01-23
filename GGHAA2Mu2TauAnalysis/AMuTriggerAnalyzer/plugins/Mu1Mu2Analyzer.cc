@@ -119,6 +119,8 @@ class Mu1Mu2Analyzer : public edm::EDAnalyzer{
         Double_t erry_down;
       };
       std::list<TrackProperties> TrackCorr;
+      edm::EDGetTokenT<bool> BadChCandFilterToken_;
+      edm::EDGetTokenT<bool> BadPFMuonFilterToken_;    
 };
 
 //
@@ -152,7 +154,9 @@ Mu1Mu2Analyzer::Mu1Mu2Analyzer(const edm::ParameterSet& iConfig):
   PUTag_(consumes<std::vector<PileupSummaryInfo> >(iConfig.getParameter<edm::InputTag>("PUTag"))),
   generator_(consumes<GenEventInfoProduct>(iConfig.existsAs<edm::InputTag>("Generator") ?
                                            iConfig.getParameter<edm::InputTag>("Generator"):
-                                           edm::InputTag()))
+                                           edm::InputTag())),
+  BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("BadChargedCandidateFilter"))),
+  BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("BadPFMuonFilter")))    
 {
    std::string FullFilePath = _fp.fullPath();
    _filePU= TFile::Open(FullFilePath.c_str());
@@ -244,6 +248,16 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
    edm::Handle<std::vector<PileupSummaryInfo> > pPU;
    if (MC_) iEvent.getByToken(PUTag_, pPU);
+   
+   edm::Handle<bool> ifilterbadChCand;
+   iEvent.getByToken(BadChCandFilterToken_, ifilterbadChCand);
+   bool  filterbadChCandidate = *ifilterbadChCand;
+
+   edm::Handle<bool> ifilterbadPFMuon;
+   iEvent.getByToken(BadPFMuonFilterToken_, ifilterbadPFMuon);
+   bool filterbadPFMuon = *ifilterbadPFMuon;
+   cout<<"filterbadCHCandidate="<<filterbadChCandidate<<std::endl;
+   cout<<"filterbadPFMuon="<<filterbadPFMuon<<std::endl; 
    //if MC do Pileup reweighting
    double pu_weight = 1.0;
    double IDs_weight=1.0;//every muon pass through "medium ID"
@@ -302,34 +316,30 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    for(edm::View<pat::Muon>::const_iterator iMuon=pMu1Mu2->begin(); iMuon!=pMu1Mu2->end();++iMuon)
    {
       p4DiMu+=iMuon->p4();
-      if (MC_ && iMuon->pt()<120.0 && fabs(iMuon->eta())<2.4){
-         float binxIDs_BToF=IDsWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
-         float binyIDs_BToF=IDsWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
-         float binxIDs_GH=IDsWeight_GH->GetXaxis()->FindBin(iMuon->pt());
-         float binyIDs_GH=IDsWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
-         float binxISOs_BToF=ISOsWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
-         float binyISOs_BToF=ISOsWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
-         float binxISOs_GH=ISOsWeight_GH->GetXaxis()->FindBin(iMuon->pt());
-         float binyISOs_GH=ISOsWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      float binxIDs_BToF=IDsWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
+      float binyIDs_BToF=IDsWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      float binxIDs_GH=IDsWeight_GH->GetXaxis()->FindBin(iMuon->pt());
+      float binyIDs_GH=IDsWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      float binxISOs_BToF=ISOsWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
+      float binyISOs_BToF=ISOsWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      float binxISOs_GH=ISOsWeight_GH->GetXaxis()->FindBin(iMuon->pt());
+      float binyISOs_GH=ISOsWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
           
-         for(std::list<TrackProperties>::const_iterator it=TrackCorr.begin(); it!=TrackCorr.end(); it++ ){
-            if(fabs(iMuon->eta())>= (*it).x-(*it).errx_down && fabs(iMuon->eta())<=(*it).x+(*it).errx_up){
-               Tracks_weight*=(*it).y;
-               break; 
-            }
+      for(std::list<TrackProperties>::const_iterator it=TrackCorr.begin(); it!=TrackCorr.end(); it++ ){
+         if(fabs(iMuon->eta())>= (*it).x-(*it).errx_down && fabs(iMuon->eta())<=(*it).x+(*it).errx_up){
+            Tracks_weight*=(*it).y;
+            break; 
          }
-         IDs_weight=IDs_weight*(LumiFraction_BToF*IDsWeight_BToF->GetBinContent(binxIDs_BToF, binyIDs_BToF)+LumiFraction_GH*IDsWeight_GH->GetBinContent(binxIDs_GH, binyIDs_GH));
-         ISOs_weight=ISOs_weight*(LumiFraction_BToF*ISOsWeight_BToF->GetBinContent(binxISOs_BToF, binyISOs_BToF)+LumiFraction_GH*ISOsWeight_GH->GetBinContent(binxISOs_GH, binyISOs_GH));
       }
+      IDs_weight=IDs_weight*(LumiFraction_BToF*IDsWeight_BToF->GetBinContent(binxIDs_BToF, binyIDs_BToF)+LumiFraction_GH*IDsWeight_GH->GetBinContent(binxIDs_GH, binyIDs_GH));
+      ISOs_weight=ISOs_weight*(LumiFraction_BToF*ISOsWeight_BToF->GetBinContent(binxISOs_BToF, binyISOs_BToF)+LumiFraction_GH*ISOsWeight_GH->GetBinContent(binxISOs_GH, binyISOs_GH));
    }
    for(edm::View<pat::Muon>::const_iterator iMuon=pMu1->begin(); iMuon!=pMu1->end(); ++iMuon){
-      if(MC_ && iMuon->pt()<500.0 && fabs(iMuon->eta())<2.4){
-         float binxTrigger_BToF=TriggerWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
-         float binyTrigger_BToF=TriggerWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
-         float binxTrigger_GH=TriggerWeight_GH->GetXaxis()->FindBin(iMuon->pt());
-         float binyTrigger_GH=TriggerWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
-         Trigger_weight=Trigger_weight*(LumiFraction_BToF*TriggerWeight_BToF->GetBinContent(binxTrigger_BToF, binyTrigger_BToF)+LumiFraction_GH*TriggerWeight_GH->GetBinContent(binxTrigger_GH, binyTrigger_GH));         
-      }
+      float binxTrigger_BToF=TriggerWeight_BToF->GetXaxis()->FindBin(iMuon->pt());
+      float binyTrigger_BToF=TriggerWeight_BToF->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      float binxTrigger_GH=TriggerWeight_GH->GetXaxis()->FindBin(iMuon->pt());
+      float binyTrigger_GH=TriggerWeight_GH->GetYaxis()->FindBin(fabs(iMuon->eta()));
+      Trigger_weight=Trigger_weight*(LumiFraction_BToF*TriggerWeight_BToF->GetBinContent(binxTrigger_BToF, binyTrigger_BToF)+LumiFraction_GH*TriggerWeight_GH->GetBinContent(binxTrigger_GH, binyTrigger_GH));         
    }
    
    invMass=p4DiMu.mass();
@@ -346,7 +356,6 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    }
    double Mu2Pt=0;
    double dR=0.0;
-   double dRMetMu1=0.0;
    double etaOfMu2=0;
    double etaOfMu1=0;
    dR=deltaR(LowestPtMu1Mu2, HighestPtMu1Mu2);
@@ -357,47 +366,38 @@ Mu1Mu2Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    histos2D_["Mu1PtMu2Pt"]->Fill(HighestPtMu1Mu2.pt(), Mu2Pt);
 
    pat::MET Met=(*pMets)[0];
-   dRMetMu1=HighestPtMu1Mu2.phi()-Met.phi();
    SFsWeight=IDs_weight*ISOs_weight*Tracks_weight*Trigger_weight;
-
-   if(MC_){
-      histos1D_["dRMetMu1"]->Fill(dRMetMu1, pu_weight*SFsWeight*EventWeight);
-      histos1D_["MetPt"]->Fill(Met.pt(), pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu1Mu2Pt"]->Fill(HighestPtMu1Mu2.pt(), pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu1Mu2Pt"]->Fill(LowestPtMu1Mu2.pt(), pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu1Mu2Eta"]->Fill(HighestPtMu1Mu2.eta(), pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu1Mu2Eta"]->Fill(LowestPtMu1Mu2.eta(), pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu1Pt"]->Fill(HighestPtMu1Mu2.pt(),pu_weight*SFsWeight*EventWeight);
-      histos1D_["Mu2Pt"]->Fill(Mu2Pt,pu_weight*SFsWeight*EventWeight);
-      histos1D_["dRMu1Mu2"]->Fill(dR,pu_weight*SFsWeight*EventWeight);
-      histos1D_["dRMu1Mu2Wider"]->Fill(dR,pu_weight*SFsWeight*EventWeight);
-      histos1D_["etaOfMu1"]->Fill(etaOfMu1,pu_weight*SFsWeight*EventWeight);
-      histos1D_["etaOfMu2"]->Fill(etaOfMu2,pu_weight*SFsWeight*EventWeight);
+   if(filterbadChCandidate&& filterbadPFMuon){
+      cout<<"test Met="<<Met.pt()<<std::endl;
+      if(MC_){
+         histos1D_["MetPt"]->Fill(Met.pt(), pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu1Mu2Pt"]->Fill(HighestPtMu1Mu2.pt(), pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu1Mu2Pt"]->Fill(LowestPtMu1Mu2.pt(), pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu1Mu2Eta"]->Fill(HighestPtMu1Mu2.eta(), pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu1Mu2Eta"]->Fill(LowestPtMu1Mu2.eta(), pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu1Pt"]->Fill(HighestPtMu1Mu2.pt(),pu_weight*SFsWeight*EventWeight);
+         histos1D_["Mu2Pt"]->Fill(Mu2Pt,pu_weight*SFsWeight*EventWeight);
+         histos1D_["dRMu1Mu2"]->Fill(dR,pu_weight*SFsWeight*EventWeight);
+         histos1D_["dRMu1Mu2Wider"]->Fill(dR,pu_weight*SFsWeight*EventWeight);
+         histos1D_["etaOfMu1"]->Fill(etaOfMu1,pu_weight*SFsWeight*EventWeight);
+         histos1D_["etaOfMu2"]->Fill(etaOfMu2,pu_weight*SFsWeight*EventWeight);
+         histos1D_["invMass"]->Fill(invMass,pu_weight*EventWeight*SFsWeight);
+      }
+      else{
+         histos1D_["MetPt"]->Fill(Met.pt());
+         histos1D_["Mu1Mu2Pt"]->Fill(HighestPtMu1Mu2.pt());
+         histos1D_["Mu1Mu2Pt"]->Fill(LowestPtMu1Mu2.pt());
+         histos1D_["Mu1Mu2Eta"]->Fill(HighestPtMu1Mu2.eta());
+         histos1D_["Mu1Mu2Eta"]->Fill(LowestPtMu1Mu2.eta());
+         histos1D_["Mu1Pt"]->Fill(HighestPtMu1Mu2.pt());
+         histos1D_["Mu2Pt"]->Fill(Mu2Pt);
+         histos1D_["dRMu1Mu2"]->Fill(dR);
+         histos1D_["dRMu1Mu2Wider"]->Fill(dR);
+         histos1D_["etaOfMu1"]->Fill(etaOfMu1);
+         histos1D_["etaOfMu2"]->Fill(etaOfMu2);
+         histos1D_["invMass"]->Fill(invMass);
+      }
    }
-   else{
-      histos1D_["dRMetMu1"]->Fill(dRMetMu1);
-      histos1D_["MetPt"]->Fill(Met.pt());
-      histos1D_["Mu1Mu2Pt"]->Fill(HighestPtMu1Mu2.pt());
-      histos1D_["Mu1Mu2Pt"]->Fill(LowestPtMu1Mu2.pt());
-      histos1D_["Mu1Mu2Eta"]->Fill(HighestPtMu1Mu2.eta());
-      histos1D_["Mu1Mu2Eta"]->Fill(LowestPtMu1Mu2.eta());
-      histos1D_["Mu1Pt"]->Fill(HighestPtMu1Mu2.pt());
-      histos1D_["Mu2Pt"]->Fill(Mu2Pt);
-      histos1D_["dRMu1Mu2"]->Fill(dR);
-      histos1D_["dRMu1Mu2Wider"]->Fill(dR);
-      histos1D_["etaOfMu1"]->Fill(etaOfMu1);
-      histos1D_["etaOfMu2"]->Fill(etaOfMu2);
-   }
-   for(typename edm::View<pat::Muon>::const_iterator iMu1Mu2=pMu1Mu2->begin();iMu1Mu2!=pMu1Mu2->end(); ++iMu1Mu2)
-   {
-    
-      histos1D_["pt_reco"]->Fill(iMu1Mu2->pt());
-   }
-     
-   if(MC_) 
-      histos1D_["invMass"]->Fill(invMass,pu_weight*EventWeight);
-   else
-      histos1D_["invMass"]->Fill(invMass);
 }
 
 
@@ -406,8 +406,6 @@ void
 Mu1Mu2Analyzer::beginJob()
 {
   edm::Service<TFileService> fileService;
-  histos1D_["pt_reco"]=fileService->make<TH1D>("pt of reco muon","pt of Mu1 Mu2 (H750a09)",100, 0.0, 100);
-  histos1D_["dRMetMu1"]=fileService->make<TH1D>("dRMetMu1","dRMetMu1",100, 0.0, 5.0);
   histos1D_["MetPt"]=fileService->make<TH1D>("MetPt","MetPt", 100, 0.0, 300.0);
   histos1D_["invMass"]=fileService->make<TH1D>("invMass of Mu1 Mu2","invMass of Mu1 Mu2 (H750a09)",invMassBins_.size()-1, &invMassBins_[0]);
   histos1D_["invMass"]->Sumw2();
