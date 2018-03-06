@@ -227,8 +227,8 @@ process.Mu1Mu2PtRankMuonID=cms.EDFilter(
   'HighestSecondHighestPtSelector',
   muonTag=cms.InputTag('HighestPtAndMuonOppositeSignDRSelector'),
   vtxTag= cms.InputTag('offlinePrimaryVertices'),
-  muon1ID=cms.string('tightNew'),
-  muon2ID=cms.string('loose')#tightNew is another option
+  muon1ID=cms.string('medium'),
+  muon2ID=cms.string('medium')#tightNew is another option
 )
 
 process.Mu1Mu2EtaCut=cms.EDFilter('PTETACUT',

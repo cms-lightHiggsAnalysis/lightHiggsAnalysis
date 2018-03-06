@@ -115,7 +115,6 @@ skimEventContent = cms.PSet(
     "drop *_ak4CaloJets*_*_*",
     "drop *_ak4TrackJets*_*_*",
     "drop *_*jetCentral*_*_*",
-    "drop *_fixedGridRho*_*_*",
     "drop *_hfEMClusters_*_*",
     "drop *_eid*_*_*",
     "drop *_muonMETValueMapProducer_muCorrData_*",
@@ -130,7 +129,6 @@ skimEventContent = cms.PSet(
     "drop *_hfRecoEcalCandidate_*_*",
     "drop *_generalV0Candidates_*_*",
     "drop *_selectDigi_*_*",
-    "drop *_*BJetTags*_*_RECO",
     "drop *_castorreco_*_*",
     "drop *_reduced*RecHits*_*_*",
     "drop *_PhotonIDProd_*_*",
@@ -246,7 +244,7 @@ process.Isolate=cms.EDFilter('CustomDimuonSelector',
                                 isoMin=cms.double(0.0),
                                 baseMuonTag=cms.InputTag('muons'),
                                 particleFlow=cms.InputTag('particleFlow'),
-                                minNumObjsToPassFilter=cms.uint32(1)
+                                minNumObjsToPassFilter=cms.uint32(2)
 )
 process.NonIsolate=cms.EDFilter('CustomDimuonSelector',
 				muonTag=cms.InputTag('Mu1Mu2EtaCut'),
@@ -405,7 +403,7 @@ process.muHadIsoTauSelector = cms.EDFilter(
                                 'SKIM'),
     tauDiscriminatorTags = cms.VInputTag(
     cms.InputTag('hpsPFTauDiscriminationByDecayModeFindingNewDMs', '', 'SKIM'),
-    cms.InputTag('hpsPFTauDiscriminationByMediumIsolationMVArun2v1DBnewDMwLT', '', 'SKIM')
+    cms.InputTag('hpsPFTauDiscriminationByIsolationMVArun2v1PWnewDMwLTraw', '', 'SKIM')
     ),
     jetTag = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM'),
     muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
@@ -427,7 +425,7 @@ process.muHadNonIsoTauSelector = cms.EDFilter(
     tauHadIsoTag = cms.InputTag('hpsPFTauDiscriminationByCombinedIsolationDeltaBetaCorrRaw3Hits', '',
                                 'SKIM'),
     tauDiscriminatorTags = cms.VInputTag(
-    cms.InputTag('hpsPFTauDiscriminationByMediumIsolationMVArun2v1DBnewDMwLT', '', 'SKIM')
+    cms.InputTag('hpsPFTauDiscriminationByIsolationMVArun2v1PWnewDMwLTraw', '', 'SKIM')
     ),
     jetTag = cms.InputTag('CleanJets', 'ak4PFJetsNoMu', 'SKIM'),
     muonRemovalDecisionTag = cms.InputTag('CleanJets','valMap','SKIM'),
@@ -440,19 +438,6 @@ process.muHadNonIsoTauSelector = cms.EDFilter(
     dR = cms.double(0.5),
     minNumObjsToPassFilter = cms.uint32(1),
     outFileName=cms.string('muHadNoIsoTauSelector.root')
-)
-process.RECOAnalyze=cms.EDAnalyzer(
-        'MuMuTauTauRecoAnalyzer',
-        tauTag=cms.InputTag('muHadNonIsoTauSelector','','SKIM'),
-        jetMuonMapTag=cms.InputTag('CleanJets','muonValMap','SKIM'),
-        Mu1Mu2= cms.InputTag('Isolate'),
-        muHadMassBins=cms.vdouble(0.0, 2.0, 4.0, 6.0, 8.0, 10.0,12.0, 20.0),
-        FourBInvMassBins=cms.vdouble(0.0, 200.0,400.0,600.0, 800.0, 1000.0),
-        outFileName=cms.string('RECOAnalyzePlots.root'),
-        inputFile=cms.string('temporarilyhere'),
-        particleFlow=cms.InputTag('particleFlow'),
-        tauHadIsoTag = cms.InputTag('hpsPFTauDiscriminationByRawCombinedIsolationDBSumPtCorr3Hits', '',
-                                'SKIM')
 )
 process.MassCut=cms.EDFilter('Mu1Mu2MassFilter',
    				    Mu1Mu2=cms.InputTag('Mu1Mu2EtaCut'),
@@ -475,7 +460,6 @@ process.antiSelectionSequence = cms.Sequence(process.MuMuSequenceSelector*
                                            process.PFTau*
                                            process.pfBTagging*
                                            process.muHadTauSelector*
-                                           process.muHadNonIsoTauSelector*
 					   process.MassCut
 )
 

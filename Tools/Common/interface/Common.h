@@ -9,6 +9,8 @@
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/TauReco/interface/PFTau.h"
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
+#include "DataFormats/PatCandidates/interface/Tau.h"
+
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
@@ -108,9 +110,7 @@ class Common {
     static const T* nearestObject(const U& obj, const std::vector<T*>& objs, int& index)
     {
       minDR comp;
-      comp.setCandidate(dynamic_cast<const reco::Candidate*>(obj.get()));
-      typename std::vector<T*>::const_iterator iMinElement = 
-	min_element(objs.begin(), objs.end(), comp);
+      typename std::vector<T*>::const_iterator iMinElement = min_element(objs.begin(), objs.end(), comp);
       const T* nearestObj = NULL;
       index = -1;
       if (iMinElement != objs.end()) {
@@ -148,16 +148,31 @@ class Common {
   /*fill STL container with muons passing the 2012 tight selection, PF isolation, and |eta|
     (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
-  static std::vector<reco::MuonRef> 
-    getTightPFIsolatedRecoMuons(const edm::Handle<reco::MuonCollection>&, const reco::Vertex*, 
+  static std::vector<reco::MuonRef>
+    getTightPFIsolatedRecoMuons(const edm::Handle<reco::MuonCollection>&, const reco::Vertex*,
+                                const double, const double, const double, const bool);
+
+  /*fill STL container with muons passing the 2012 tight selection, PF isolation, and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
+    https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
+  static std::vector<reco::MuonRef>
+    getTightPFIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>&,
+                                const edm::Handle<reco::MuonCollection>&, const reco::Vertex*,
+                                const double, const double, const double, const bool);
+
+  /*fill STL container with muons passing the 2012 tight selection, PF isolation, and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
+    https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
+  static std::vector<pat::Muon> 
+    getTightPFIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&, const reco::Vertex*, 
 				const double, const double, const double, const bool);
 
   /*fill STL container with muons passing the 2012 tight selection, PF isolation, and |eta|
     (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
-  static std::vector<reco::MuonRef> 
-    getTightPFIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>&, 
-				const edm::Handle<reco::MuonCollection>&, const reco::Vertex*, 
+  static std::vector<pat::Muon> 
+    getTightPFIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&, 
+				const edm::Handle<edm::View<pat::Muon> >&, const reco::Vertex*, 
 				const double, const double, const double, const bool);
 
   /*fill STL container with muons passing the 2012 tight selection, detector isolation, and |eta|
@@ -175,6 +190,22 @@ class Common {
 				      const edm::Handle<reco::MuonCollection>&, 
 				      const reco::Vertex*, const double, const double, const bool);
 
+  /*fill STL container with muons passing the 2012 tight selection, detector isolation, and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
+    https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
+  static std::vector<pat::Muon>
+    getTightDetectorIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                      const reco::Vertex*, const double, const double, const bool);
+
+  /*fill STL container with muons passing the 2012 tight selection, detector isolation, and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
+    https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
+  static std::vector<pat::Muon>
+    getTightDetectorIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                      const edm::Handle<edm::View<pat::Muon> >&,
+                                      const reco::Vertex*, const double, const double, const bool);
+
+
   /*fill STL container with muons passing the 2012 soft selection and |eta|
     (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId)*/
   static std::vector<reco::MuonRef> getSoftRecoMuons(const edm::Handle<reco::MuonCollection>&, 
@@ -188,6 +219,20 @@ class Common {
 						     const reco::Vertex*, const double);
   static std::vector<reco::MuonRef> getTrackerRecoMuons(const edm::Handle<reco::MuonRefVector>&,
                                                         const edm::Handle<reco::MuonCollection>&);
+
+  /*fill STL container with muons passing the 2012 soft selection and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId)*/
+  static std::vector<pat::Muon> getSoftPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                                     const reco::Vertex*, const double);
+
+  static std::vector<pat::Muon> getTrackerPATMuons(const edm::Handle<edm::View<pat::Muon> >&);
+  /*fill STL container with muons passing the 2012 soft selection and |eta|
+    (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId)*/
+  static std::vector<pat::Muon> getSoftPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                                     const edm::Handle<edm::View<pat::Muon> >&,
+                                                     const reco::Vertex*, const double);
+  static std::vector<pat::Muon> getTrackerPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                                        const edm::Handle<edm::View<pat::Muon> >&);
 
   /*fill STL container with muons passing the 2012 soft selection and |eta| along with dz < 0.5 cm
     (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId)*/
@@ -209,7 +254,22 @@ class Common {
 		const std::vector<edm::Handle<reco::PFTauDiscriminator> >&, 
 		const edm::Handle<reco::PFTauDiscriminator>&, const double, const double, 
 		const bool, const double);
-  
+ 
+  //fill STL container with taus passing specified discriminators in specified eta range
+  static std::vector<pat::Tau>
+    getPATTaus(const edm::Handle<pat::TauCollection>&,
+                const std::vector<std::string>,
+                const std::string, const double, const double,
+                const bool, const double);
+
+  //fill STL container with taus passing specified discriminators in specified eta range
+  static std::vector<pat::Tau>
+    getPATTaus(const edm::Handle<pat::TauCollection>&,
+                const edm::Handle<pat::TauCollection>&,
+                const std::vector<std::string>,
+                const std::string, const double, const double,
+                const bool, const double);
+ 
   //fill STL container with photons passing specified cuts in specified eta range
   static std::vector<reco::PhotonRef> 
     getRecoPhotons(const edm::Handle<reco::PhotonCollection>&, 
@@ -333,6 +393,17 @@ class Common {
     getTightDetectorRecoMuons(const edm::Handle<reco::MuonCollection>&,
                       const reco::Vertex*,
                       const double);  
+
+  static std::vector<pat::Muon>
+    getTightDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                  const edm::Handle<edm::View<pat::Muon> >&,
+                                  const reco::Vertex*,
+                                  const double );
+  static std::vector<pat::Muon>
+    getTightDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                      const reco::Vertex*,
+                      const double);
+
   static std::vector<reco::MuonRef>
     getLooseDetectorRecoMuons(const edm::Handle<reco::MuonRefVector>&,
                                   const edm::Handle<reco::MuonCollection>&,
@@ -340,6 +411,14 @@ class Common {
   static std::vector<reco::MuonRef>
     getLooseDetectorRecoMuons(const edm::Handle<reco::MuonCollection>&,
                       const double);
+  static std::vector<pat::Muon>
+    getLooseDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                                  const edm::Handle<edm::View<pat::Muon> >&,
+                                  const double );
+  static std::vector<pat::Muon>
+    getLooseDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                      const double);
+
   static std::vector<reco::MuonRef>
     getIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>&,
                              const edm::Handle<reco::MuonCollection>&,
@@ -351,6 +430,16 @@ class Common {
                              const edm::Handle<reco::PFCandidateCollection>&,
                              const double,
 			     const double );
+  static std::vector<pat::Muon>
+    getIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                        const edm::Handle<reco::PFCandidateCollection> & ,
+                        const double, const double);
+
+  static std::vector<pat::Muon>
+    getIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                        const edm::Handle<edm::View<pat::Muon> >&,
+                        const edm::Handle<reco::PFCandidateCollection> & ,
+                        const double, const double);
 
  private:
 
@@ -388,6 +477,15 @@ class Common {
     getTightIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>&, 
 			      const edm::Handle<reco::MuonCollection>&, const reco::Vertex*, 
 			      const bool, const double, const double, const double, const bool);
+
+  static std::vector<pat::Muon>
+    getTightIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&, const reco::Vertex*,
+                              const bool, const double, const double, const double, const bool);
+
+  static std::vector<pat::Muon>
+    getTightIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >&,
+                              const edm::Handle<edm::View<pat::Muon> >&, const reco::Vertex*,
+                              const bool, const double, const double, const double, const bool);
 
   static double rhoCorrIso(const edm::Handle<edm::ValueMap<double> >&, 
 			   const edm::Handle<double>&, const reco::PhotonRef&, 

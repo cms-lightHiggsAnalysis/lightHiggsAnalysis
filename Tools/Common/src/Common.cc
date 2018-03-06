@@ -3,6 +3,7 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h"
+#include "DataFormats/PatCandidates/interface/Tau.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
 #include "TH1F.h"
 #include "TLegend.h"
@@ -279,6 +280,23 @@ Common::getTightPFIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>& pMuo
 				   etaMax, passIso);
 }
 
+std::vector<pat::Muon>
+Common::getTightPFIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                   const reco::Vertex* pPV, const double PUSubtractionCoeff,
+                                   const double PFIsoMax, const double etaMax, const bool passIso)
+{
+  return getTightIsolatedPATMuons(pMuons, pPV, true, PUSubtractionCoeff, PFIsoMax, etaMax, passIso);
+}
+
+std::vector<pat::Muon>
+Common::getTightPFIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                    const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                                    const reco::Vertex* pPV, const double PUSubtractionCoeff,
+                                    const double PFIsoMax, const double etaMax, const bool passIso)
+{
+  return getTightIsolatedPATMuons(pMuons, pBaseMuons, pPV, true, PUSubtractionCoeff, PFIsoMax, etaMax, passIso);
+}
+
 std::vector<reco::MuonRef>
 Common::getTightDetectorIsolatedRecoMuons(const edm::Handle<reco::MuonCollection>& pMuons, 
 					  const reco::Vertex* pPV, const double detectorIsoMax, 
@@ -295,6 +313,23 @@ Common::getTightDetectorIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>
 {
   return getTightIsolatedRecoMuons(pMuons, pBaseMuons, pPV, false, 0.0, detectorIsoMax, etaMax, 
 				   passIso);
+}
+ 
+std::vector<pat::Muon>
+Common::getTightDetectorIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                         const reco::Vertex* pPV, const double detectorIsoMax,
+                                         const double etaMax, const bool passIso)
+{
+  return getTightIsolatedPATMuons(pMuons, pPV, false, 0.0, detectorIsoMax, etaMax, passIso);
+} 
+
+std::vector<pat::Muon>
+Common::getTightDetectorIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                         const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                                         const reco::Vertex* pPV, const double detectorIsoMax,
+                                         const double etaMax, const bool passIso)
+{
+  return getTightIsolatedPATMuons(pMuons, pBaseMuons, pPV, false, 0.0, detectorIsoMax, etaMax, passIso);
 }
 
 
@@ -357,6 +392,61 @@ Common::getTrackerRecoMuons(const edm::Handle<reco::MuonRefVector>& pMuons,
         ++iMuon){
    if ((*iMuon)->isGlobalMuon())
       trackerMuons.push_back(reco::MuonRef(pBaseMuons, iMuon->key()));
+   }
+   return trackerMuons;
+}
+
+std::vector<pat::Muon>
+Common::getSoftPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons, const reco::Vertex* pPV,
+                         const double etaMax)
+{
+  std::vector<pat::Muon> softMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    if(muon::isSoftMuon(*iMuon, *pPV)&&((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax)))
+      softMuons.push_back(*iMuon);
+  }//for iMuon
+  return softMuons;
+}
+
+std::vector<pat::Muon>
+Common::getTrackerPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons)
+{
+  std::vector<pat::Muon> trackerMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon =pMuons->begin(); iMuon!= pMuons->end(); ++iMuon)
+  {
+    if (iMuon->isGlobalMuon())
+      trackerMuons.push_back(*iMuon);
+  }//for iMuon
+  return trackerMuons;
+}
+
+std::vector<pat::Muon>
+Common::getSoftPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                         const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                         const reco::Vertex* pPV, const double etaMax)
+{
+  std::vector<pat::Muon> softMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    const reco::TrackRef innerTrack = iMuon->innerTrack();
+    if (pPV != NULL) 
+    {
+      if(muon::isSoftMuon(*iMuon, *pPV) && ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax)))
+        softMuons.push_back(*iMuon);
+    }//if pPV
+  }//for iMuon
+  return softMuons;
+}
+std::vector<pat::Muon>
+Common::getTrackerPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                            const edm::Handle<edm::View<pat::Muon> >& pBaseMuons)
+{
+   std::vector<pat::Muon> trackerMuons;
+   for (edm::View<pat::Muon> ::const_iterator iMuon= pMuons->begin(); iMuon!= pMuons->end(); ++iMuon)
+   {
+     if (iMuon->isGlobalMuon())
+        trackerMuons.push_back(*iMuon);
    }
    return trackerMuons;
 }
@@ -432,6 +522,51 @@ Common::getRecoTaus(const edm::Handle<reco::PFTauRefVector>& pTaus,
 	((pTMin == -1.0) || ((*iTau)->pt() > pTMin)) && 
 	((isoMax == -1.0) || ((*pTauHadIso)[tauRef] < isoMax))) {
       taus.push_back(tauRef);
+    }
+  }
+  return taus;
+}
+
+std::vector<pat::Tau>
+Common::getPATTaus(const edm::Handle<pat::TauCollection>& pTaus,
+                    const std::vector<std::string> vecTauDiscriminators,
+                    const std::string tauHadIso, const double pTMin,
+                    const double etaMax, const bool passIso, const double isoMax)
+{
+  std::vector<pat::Tau> taus;
+  for (pat::TauCollection::const_iterator iTau = pTaus->begin(); iTau != pTaus->end(); ++iTau) {
+    bool passTauDiscriminators = true;
+    for (unsigned int i = 0; i < vecTauDiscriminators.size(); i++){
+      if ( iTau->tauID(vecTauDiscriminators[i]) < .5) passTauDiscriminators = false;
+    }//for
+    if (((passIso && passTauDiscriminators) || (!passIso && !passTauDiscriminators)) &&
+        ((etaMax == -1.0) || (fabs(iTau->eta()) < etaMax)) &&
+        ((pTMin == -1.0) || (iTau->pt() > pTMin)) &&
+        ((isoMax == -1.0) || (iTau->tauID(tauHadIso) < isoMax))) {
+      taus.push_back((*iTau));
+    }
+  }
+  return taus;
+}
+
+std::vector<pat::Tau>
+Common::getPATTaus(const edm::Handle<pat::TauCollection>& pTaus,
+                    const edm::Handle<pat::TauCollection>& pBaseTaus,
+                    const std::vector<std::string> vecTauDiscriminators,
+                    const std::string tauHadIso, const double pTMin,
+                    const double etaMax, const bool passIso, const double isoMax)
+{
+  std::vector<pat::Tau> taus;
+  for (pat::TauCollection::const_iterator iTau = pTaus->begin(); iTau != pTaus->end(); ++iTau) {
+    bool passTauDiscriminators = true;
+    for (unsigned int i = 0; i < vecTauDiscriminators.size(); i++){
+      if ( iTau->tauID(vecTauDiscriminators[i]) < .5) passTauDiscriminators = false;
+    } //for
+    if (((passIso && passTauDiscriminators) || (!passIso && !passTauDiscriminators)) &&
+        ((etaMax == -1.0) || (fabs((iTau)->eta()) < etaMax)) &&
+        ((pTMin == -1.0) || ((iTau)->pt() > pTMin)) &&
+        ((isoMax == -1.0) || (iTau->tauID(tauHadIso) < isoMax))) {
+      taus.push_back((*iTau));
     }
   }
   return taus;
@@ -775,6 +910,60 @@ Common::getTightIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>& pMuons
   return tightMuons;
 }
 
+std::vector<pat::Muon>
+Common::getTightIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const reco::Vertex* pPV, const bool usePFIso,
+                                  const double PUSubtractionCoeff, const double isoMax,
+                                  const double etaMax, const bool passIso)
+{
+  std::vector<pat::Muon> tightMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    if ((pPV != NULL) && muon::isTightMuon(*iMuon, *pPV) && iMuon->isPFMuon() && (fabs(iMuon->innerTrack()->dz(pPV->position())) < 0.5) &&
+        (iMuon->track()->hitPattern().trackerLayersWithMeasurement() > 5) && ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) 
+    {
+      float iso = 0.0;
+      if (usePFIso)
+        iso = getMuonCombPFIso(*iMuon, PUSubtractionCoeff)/iMuon->pt();
+      else 
+      {
+        const reco::MuonIsolation isoBlock = iMuon->isolationR03();
+        iso = (isoBlock.sumPt + isoBlock.emEt + isoBlock.hadEt)/iMuon->pt();
+      }//else
+      if ((isoMax == -1.0) || (passIso && (iso < isoMax)) || (!passIso && (iso >= isoMax))) 
+        tightMuons.push_back(*iMuon);
+    }//if pPV != NULL
+  }//for iMuon
+  return tightMuons;
+}
+
+std::vector<pat::Muon>
+Common::getTightIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                                  const reco::Vertex* pPV, const bool usePFIso,
+                                  const double PUSubtractionCoeff, const double isoMax,
+                                  const double etaMax, const bool passIso)
+{
+  std::vector<pat::Muon> tightMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    if ((pPV != NULL) && muon::isTightMuon(*iMuon, *pPV) && iMuon->isPFMuon() && (fabs(iMuon->innerTrack()->dz(pPV->position())) < 0.5) &&
+        (iMuon->track()->hitPattern().trackerLayersWithMeasurement() > 5) && ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) {
+      float iso = 0.0;
+      if (usePFIso) 
+        iso = getMuonCombPFIso(*iMuon, PUSubtractionCoeff)/iMuon->pt();
+      else 
+      {
+        const reco::MuonIsolation isoBlock = iMuon->isolationR03();
+        iso = (isoBlock.sumPt + isoBlock.emEt + isoBlock.hadEt) / iMuon->pt();
+      }//else
+      if ((isoMax == -1.0) || (passIso && (iso < isoMax)) || (!passIso && (iso >= isoMax))) 
+        tightMuons.push_back(*iMuon);
+    }//ifpPV != NULL)
+  }// for iMuon
+  return tightMuons;
+}
+
 std::vector<reco::MuonRef>
 Common::getIsolatedRecoMuons(const edm::Handle<reco::MuonCollection>& pMuons,
 			     const edm::Handle<reco::PFCandidateCollection> & pPFCandidates,
@@ -805,6 +994,40 @@ Common::getIsolatedRecoMuons(const edm::Handle<reco::MuonRefVector>& pMuons,
     double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/(*iMuon)->pt();
     if((reliso<isoMax || (isoMax==-1)) && (reliso>isoMin || (isoMin==0)))
       IsoMuons.push_back(reco::MuonRef(pBaseMuons, iMuon->key()));
+
+  }
+  return IsoMuons;
+}
+
+std::vector<pat::Muon>
+Common::getIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                             const edm::Handle<reco::PFCandidateCollection> & pPFCandidates,
+                             const double isoMax, const double isoMin)
+{
+  std::vector<pat::Muon> IsoMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    reco::MuonPFIsolation iso = iMuon->pfIsolationR04();
+    double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/iMuon->pt();
+    if((reliso<isoMax || (isoMax==-1)) && (reliso>isoMin || (isoMin==0)))
+      IsoMuons.push_back(*iMuon);
+  }
+  return IsoMuons;
+}
+
+std::vector<pat::Muon>
+Common::getIsolatedPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                             const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                             const edm::Handle<reco::PFCandidateCollection> & pPFCandidates,
+                             const double isoMax, const double isoMin)
+{
+  std::vector<pat::Muon> IsoMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    reco::MuonPFIsolation iso = iMuon->pfIsolationR04();
+    double reliso = (iso.sumChargedHadronPt+TMath::Max(0.,iso.sumNeutralHadronEt+iso.sumPhotonEt-0.5*iso.sumPUPt))/iMuon->pt();
+    if((reliso<isoMax || (isoMax==-1)) && (reliso>isoMin || (isoMin==0)))
+      IsoMuons.push_back(*iMuon);
 
   }
   return IsoMuons;
@@ -844,6 +1067,43 @@ Common::getTightDetectorRecoMuons(const edm::Handle<reco::MuonCollection>& pMuon
   }
   return tightMuons;
 }
+
+std::vector<pat::Muon>
+Common::getTightDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                                  const reco::Vertex* pPV,
+                                  const double etaMax )
+{
+  std::vector<pat::Muon> tightMuons;
+  for (edm::View<pat::Muon> ::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end();
+       ++iMuon) {
+    if ((pPV != NULL) &&
+        muon::isTightMuon(*iMuon, *pPV)&&
+        ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) {
+        tightMuons.push_back(*iMuon);
+    }
+  }
+  return tightMuons;
+}
+std::vector<pat::Muon>
+Common::getTightDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const reco::Vertex* pPV,
+                                  const double etaMax)
+{
+  std::vector<pat::Muon> tightMuons;
+  for (edm::View<pat::Muon> ::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end();
+       ++iMuon) {
+    if ((pPV != NULL) &&
+        muon::isTightMuon(*iMuon, *pPV) &&
+        ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) {
+        tightMuons.push_back(*iMuon);
+
+    }
+  }
+  return tightMuons;
+}
+
+
 std::vector<reco::MuonRef>
 Common::getLooseDetectorRecoMuons(const edm::Handle<reco::MuonRefVector>& pMuons,
                                   const edm::Handle<reco::MuonCollection>& pBaseMuons,
@@ -872,6 +1132,32 @@ Common::getLooseDetectorRecoMuons(const edm::Handle<reco::MuonCollection>& pMuon
 
     }
   }
+  return looseMuons;
+}
+
+std::vector<pat::Muon>
+Common::getLooseDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const edm::Handle<edm::View<pat::Muon> >& pBaseMuons,
+                                  const double etaMax )
+{
+  std::vector<pat::Muon> looseMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    if (muon::isLooseMuon(*iMuon) && ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) 
+        looseMuons.push_back(*iMuon);
+  }//for iMuon
+  return looseMuons;
+}
+std::vector<pat::Muon>
+Common::getLooseDetectorPATMuons(const edm::Handle<edm::View<pat::Muon> >& pMuons,
+                                  const double etaMax)
+{
+  std::vector<pat::Muon> looseMuons;
+  for (edm::View<pat::Muon>::const_iterator iMuon = pMuons->begin(); iMuon != pMuons->end(); ++iMuon) 
+  {
+    if (muon::isLooseMuon(*iMuon) && ((etaMax == -1.0) || (fabs(iMuon->eta()) < etaMax))) 
+        looseMuons.push_back(*iMuon);
+  }//for iMuon
   return looseMuons;
 }
 

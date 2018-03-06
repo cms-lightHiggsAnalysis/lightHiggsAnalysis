@@ -12,4 +12,5 @@
   <use   name="DataFormats/TauReco"/>
   <use   name="DataFormats/MuonReco"/>
   <use   name="Tools/Common"/>
+  <use name="DataFormats/PatCandidates"/>
 </library>

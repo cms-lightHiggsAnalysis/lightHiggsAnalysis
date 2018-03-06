@@ -58,17 +58,14 @@ private:
   // ----------member data ---------------------------
 
   //input tag for base reco muon collection
-  edm::EDGetTokenT<reco::MuonCollection> baseMuonTag_;
+  edm::EDGetTokenT<edm::View<pat::Muon> > baseMuonTag_;
 
   //input tag for reco muon collection
-  edm::EDGetTokenT<reco::MuonRefVector> muonTag_;
+  edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_;
 
   //input tag for reco vertex collection
   edm::EDGetTokenT<reco::VertexCollection> vtxTag_;
 
-  //input tag for muons that should not be allowed to pass (i.e. they passed some other selection)
-  edm::EDGetTokenT<reco::MuonRefVector> vetoMuonTag_;
-  edm::EDGetTokenT<reco::MuonRefVector> vetoMuonTag2_;
   //muon ID to apply
   std::string muonID_;
 
@@ -106,13 +103,9 @@ private:
 // constructors and destructor
 //
 CustomMuonSelector::CustomMuonSelector(const edm::ParameterSet& iConfig) :
-  baseMuonTag_(consumes<reco::MuonCollection>(iConfig.getParameter<edm::InputTag>("baseMuonTag"))),
-  muonTag_(consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("muonTag"))),
+  baseMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("baseMuonTag"))),
+  muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
   vtxTag_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vtxTag"))),
-  vetoMuonTag_(iConfig.existsAs<edm::InputTag>("vetoMuonTag")?
-                  consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("vetoMuonTag")):edm::EDGetTokenT<reco::MuonRefVector>()),
-  vetoMuonTag2_(iConfig.existsAs<edm::InputTag>("vetoMuonTag2")?
-                  consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("vetoMuonTag2")):edm::EDGetTokenT<reco::MuonRefVector>()),
   muonID_(iConfig.getParameter<std::string>("muonID")),
   PFIsoMax_(iConfig.getParameter<double>("PFIsoMax")),
   detectorIsoMax_(iConfig.getParameter<double>("detectorIsoMax")),
@@ -122,7 +115,7 @@ CustomMuonSelector::CustomMuonSelector(const edm::ParameterSet& iConfig) :
   etaMax_(iConfig.getParameter<double>("etaMax")),
   minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter"))
 {
-  produces<reco::MuonRefVector>();
+  produces<std::vector<pat::Muon> >();
 }
 
 
@@ -143,28 +136,19 @@ CustomMuonSelector::~CustomMuonSelector()
 bool CustomMuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   //create pointer to output collection
-  std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
+  std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
   //get base muons
-  edm::Handle<reco::MuonCollection> pBaseMuons;
+  edm::Handle<edm::View<pat::Muon> > pBaseMuons;
   iEvent.getByToken(baseMuonTag_, pBaseMuons);
 
   //get muons
-  edm::Handle<reco::MuonRefVector> pMuons;
+  edm::Handle<edm::View<pat::Muon> > pMuons;
   iEvent.getByToken(muonTag_, pMuons);
 
   //get vertices
   edm::Handle<reco::VertexCollection> pVertices;
   iEvent.getByToken(vtxTag_, pVertices);
-
-  //get veto muons
-  edm::Handle<reco::MuonRefVector> pVetoMuons;
-  if(vetoMuonTag_.isUninitialized()){}
-  else iEvent.getByToken(vetoMuonTag_, pVetoMuons);
-
-  edm::Handle<reco::MuonRefVector> pVetoMuons2;
-  if(vetoMuonTag2_.isUninitialized()){}
-  else iEvent.getByToken(vetoMuonTag2_, pVetoMuons2);
 
   //identify the first good vertex (the "primary" (?))
   reco::Vertex* pPV = Common::getPrimaryVertex(pVertices);
@@ -172,36 +156,37 @@ bool CustomMuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetu
   /*fill STL container with muons passing the 2012 tight selection, PF isolation, and |eta| 
     (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
-  std::vector<reco::MuonRef> muons;
-  if (muonID_ == "tight") {
-    if(usePFIso_) {
+  std::vector<pat::Muon> muons;
+  if (muonID_ == "tight") 
+  {
+    if(usePFIso_) 
+    {
       muons = pMuons.isValid() ? 
-      Common::getTightPFIsolatedRecoMuons(pMuons, pBaseMuons, pPV, PUSubtractionCoeff_, 
-					    PFIsoMax_, etaMax_, passIso_) : 
-      Common::getTightPFIsolatedRecoMuons(pBaseMuons, pPV, PUSubtractionCoeff_, PFIsoMax_, 
-					    etaMax_, passIso_);
-    }
+        Common::getTightPFIsolatedPATMuons(pMuons, pBaseMuons, pPV, PUSubtractionCoeff_, PFIsoMax_, etaMax_, passIso_) : 
+        Common::getTightPFIsolatedPATMuons(pBaseMuons, pPV, PUSubtractionCoeff_, PFIsoMax_, etaMax_, passIso_);
+    }//if usePFIso_
 
     /*fill STL container with muons passing the 2012 tight selection, detector isolation, and 
       |eta| (cf. https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId and 
       https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Muon_Isolation_AN1)*/
-    else {
+    else 
+    {
       muons = pMuons.isValid() ? 
-      Common::getTightDetectorIsolatedRecoMuons(pMuons, pBaseMuons, pPV, detectorIsoMax_, 
-						  etaMax_, passIso_) : 
-      Common::getTightDetectorIsolatedRecoMuons(pBaseMuons, pPV, detectorIsoMax_, 
-						  etaMax_, passIso_);
-    }
-  }
-  else if(muonID_== "tightNew"){
+      Common::getTightDetectorIsolatedPATMuons(pMuons, pBaseMuons, pPV, detectorIsoMax_,  etaMax_, passIso_) : 
+      Common::getTightDetectorIsolatedPATMuons(pBaseMuons, pPV, detectorIsoMax_, etaMax_, passIso_);
+    }//else
+  }//if muonID_ == tihgt
+  else if(muonID_== "tightNew")
+  {
     muons=pMuons.isValid()?
-      Common::getTightDetectorRecoMuons(pMuons, pBaseMuons, pPV, etaMax_):
-      Common::getTightDetectorRecoMuons(pBaseMuons, pPV, etaMax_);
+      Common::getTightDetectorPATMuons(pMuons, pBaseMuons, pPV, etaMax_):
+      Common::getTightDetectorPATMuons(pBaseMuons, pPV, etaMax_);
   }
-  else if(muonID_== "loose"){
+  else if(muonID_== "loose")
+  {
     muons=pMuons.isValid()?
-      Common::getLooseDetectorRecoMuons(pMuons,pBaseMuons, etaMax_):
-      Common::getLooseDetectorRecoMuons(pBaseMuons, etaMax_);
+      Common::getLooseDetectorPATMuons(pMuons,pBaseMuons, etaMax_):
+      Common::getLooseDetectorPATMuons(pBaseMuons, etaMax_);
   }
   
 
@@ -209,52 +194,26 @@ bool CustomMuonSelector::filter(edm::Event& iEvent, const edm::EventSetup& iSetu
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId#Soft_Muon)*/
   else if (muonID_ == "soft"){
      muons = pMuons.isValid() ? 
-      Common::getSoftRecoMuons(pMuons, pBaseMuons, pPV, etaMax_) : 
-      Common::getSoftRecoMuons(pBaseMuons, pPV, etaMax_);
+      Common::getSoftPATMuons(pMuons, pBaseMuons, pPV, etaMax_) : 
+      Common::getSoftPATMuons(pBaseMuons, pPV, etaMax_);
   }
   
   else if (muonID_ == "tracker"){
      muons =pMuons.isValid() ?
-       Common::getTrackerRecoMuons(pMuons, pBaseMuons):
-       Common::getTrackerRecoMuons(pBaseMuons);
+       Common::getTrackerPATMuons(pMuons, pBaseMuons):
+       Common::getTrackerPATMuons(pBaseMuons);
   }
   //error: unsupported muon ID
   else throw cms::Exception("CustomMuonSelector") << "Error: unsupported muon ID.\n";
 
-  //make an STL container of the veto muon ref keys
-  std::vector<int> vetoMuonRefKeys;
-  if (pVetoMuons.isValid()) {
-    for (reco::MuonRefVector::const_iterator iVetoMuon = pVetoMuons->begin(); 
-	 iVetoMuon != pVetoMuons->end(); ++iVetoMuon) {
-      vetoMuonRefKeys.push_back(iVetoMuon->key());
-    }
-  }
-  std::vector<int> vetoMuonRefKeys2;
-  if (pVetoMuons2.isValid()) {
-    for (reco::MuonRefVector::const_iterator iVetoMuon2 = pVetoMuons2->begin();
-         iVetoMuon2 != pVetoMuons2->end(); ++iVetoMuon2) {
-      vetoMuonRefKeys2.push_back(iVetoMuon2->key());
-    }
-  }
-  //fill output collection
   unsigned int nPassingMuons = 0;
-  for (std::vector<reco::MuonRef>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); 
-       ++iMuon) {
-    if ((std::find(vetoMuonRefKeys.begin(), vetoMuonRefKeys.end(), 
-		  iMuon->key()) == vetoMuonRefKeys.end())&&(std::find(vetoMuonRefKeys2.begin(), vetoMuonRefKeys2.end(),  iMuon->key()) == vetoMuonRefKeys2.end())) {
-      muonColl->push_back(*iMuon);
-      ++nPassingMuons;
+  for (std::vector<pat::Muon>::const_iterator iMuon = muons.begin(); iMuon != muons.end(); ++iMuon) 
+  {
+    muonColl->push_back(*iMuon);
+    ++nPassingMuons;
+  }//for iMuon
 
-//       //debug
-//       std::cerr << "Selected muon pT: " << (*iMuon)->pt() << " GeV\n";
-//       std::cerr << "Selected muon eta: " << (*iMuon)->eta() << std::endl;
-//       std::cerr << "Selected muon phi: " << (*iMuon)->phi() << std::endl;
-//       std::cerr << "Selected muon ref key: " << iMuon->key() << std::endl;
-    }
-  }
   iEvent.put(muonColl);
-
-  //if not enough muons passing cuts were found in this event, stop processing
   return (nPassingMuons >= minNumObjsToPassFilter_);
 }
 

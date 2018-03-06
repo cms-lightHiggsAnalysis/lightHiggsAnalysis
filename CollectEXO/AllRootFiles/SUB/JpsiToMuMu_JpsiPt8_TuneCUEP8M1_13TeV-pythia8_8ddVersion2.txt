@@ -1,0 +1,6 @@
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_1.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_2.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_3.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_4.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_5.root
+root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8/JpsiToMuMu_JpsiPt8_TuneCUEP8M1_13TeV-pythia8_8ddVersion2/171215_232631/0000/TFileDYZ_6.root

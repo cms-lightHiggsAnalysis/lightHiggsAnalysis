@@ -1,0 +1,34 @@
+\section{Control regions\label{sec:controlregions}}
+
+Editor: Mengyao Shi
+Below is a list of content of what I want to talk about. 
+Our control region is defined as the following: 
+\begin{itemize}
+  \item Muons pass a loose selection with pt$>$5GeV, $\abs\eta$ within 2.4
+  \item Muons pass medium ID. 
+  \item vertex requirements
+  \item Let event pass muon trigger, and select highest pt muon that passed trigger(Mu1)
+  \item among all isolated muons that are opposite sign to Mu1, we pick highest pt muon as Mu2.
+  \item invariant Mass window is set in Z region, 60GeV to 120GeV.
+\end{itemize}
+
+In order to improve modeling of data, we added additional corrections or scale factors to simulated events.
+reults \ref{fig:invMass}
+\begin{itemize}
+  \item muon identification scale factor
+  \item muon isolation scale factor
+  \item muon tracking efficiency
+  \item muon trigger efficiency
+  \item rochester correction
+  \item pile-up reweighting
+  \item generation level event weights
+\end{itemize}
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=.3]{figures/invMass of Mu1 Mu2.png}
+    \captionsetup{format=hang}
+  \caption{control region invariant mass plot}
+  \label{fig:invMass}
+\end{figure}
+

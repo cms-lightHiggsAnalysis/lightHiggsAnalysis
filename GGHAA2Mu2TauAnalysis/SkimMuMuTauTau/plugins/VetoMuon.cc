@@ -62,9 +62,9 @@ class VetoMuon : public edm::EDFilter {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // ----------member data ---------------------------
- edm::EDGetTokenT<reco::MuonRefVector> muonTag_;
- edm::EDGetTokenT<reco::MuonRefVector> vetoMuonTag_;
- double Cut_; 
+ edm::EDGetTokenT<edm::View<pat::Muon> > muonTag_;
+ edm::EDGetTokenT<edm::View<pat::Muon> > vetoMuonTag_;
+ double dRCut_; 
  unsigned int minNumObjsToPassFilter_;
 };
 
@@ -80,14 +80,14 @@ class VetoMuon : public edm::EDFilter {
 // constructors and destructor
 //
 VetoMuon::VetoMuon(const edm::ParameterSet& iConfig):
-  muonTag_(consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("muonTag"))),
- vetoMuonTag_(consumes<reco::MuonRefVector>(iConfig.getParameter<edm::InputTag>("vetoMuonTag"))),
-  Cut_(iConfig.getParameter<double>("dRCut")),
+  muonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("muonTag"))),
+ vetoMuonTag_(consumes<edm::View<pat::Muon> >(iConfig.getParameter<edm::InputTag>("vetoMuonTag"))),
+  dRCut_(iConfig.getParameter<double>("dRCut")),
  minNumObjsToPassFilter_(iConfig.getParameter<unsigned int>("minNumObjsToPassFilter"))
 {
 
    //now do what ever initialization is needed
-   produces<reco::MuonRefVector>();
+   produces<std::vector<pat::Muon> >();
 }
 
 
@@ -109,49 +109,34 @@ bool
 VetoMuon::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
-  std::auto_ptr<reco::MuonRefVector> muonColl(new reco::MuonRefVector);
+  std::auto_ptr<std::vector<pat::Muon> > muonColl(new std::vector<pat::Muon> );
 
-  edm::Handle<reco::MuonRefVector> pMuons;
+  edm::Handle<edm::View<pat::Muon> > pMuons;
   iEvent.getByToken(muonTag_, pMuons);
 
-  edm::Handle<reco::MuonRefVector> pVetoMuons;
+  edm::Handle<edm::View<pat::Muon> > pVetoMuons;
   iEvent.getByToken(vetoMuonTag_, pVetoMuons);
 
-
-
-  std::vector<int> vetoMuonRefKeys;
-  if (pVetoMuons.isValid()) {
-    for (reco::MuonRefVector::const_iterator iVetoMuon = pVetoMuons->begin(); 
-	 iVetoMuon != pVetoMuons->end(); ++iVetoMuon) {
-      vetoMuonRefKeys.push_back(iVetoMuon->key());
-    }
-  }
-
   unsigned int nPassingMuons = 0;
-  for(reco::MuonRefVector::const_iterator iMuon=pMuons->begin();
-         iMuon!=pMuons->end();++iMuon){
+  for(edm::View<pat::Muon>::const_iterator iMuon=pMuons->begin(); iMuon!=pMuons->end();++iMuon)
+  {
     unsigned int count=0;
-    for(reco::MuonRefVector::const_iterator iVetoMuon = pVetoMuons->begin();
-	iVetoMuon != pVetoMuons->end(); ++iVetoMuon){
-    if(deltaR(**iMuon, **iVetoMuon)<0.0001&&((**iMuon).pt()-(**iVetoMuon).pt())/((**iVetoMuon).pt())<0.0001)
-       continue;
-    else if(deltaR(**iMuon, **iVetoMuon)<Cut_)
-       continue;
-    else count++;
-  
-    //if (std::find(vetoMuonRefKeys.begin(), vetoMuonRefKeys.end(), 
-//		  iMuon->key()) == vetoMuonRefKeys.end()) {
-    }
-      if(count==(pVetoMuons->size()))
-      {
-      //  int nearestGenObjKey=-1;
-       // const reco::GenParticle* nearestGenObj=
-       // Common::nearestObject(*iMuon, genObjPtrs, nearestGenObjKey);
-      //  std::cout<< " Mu3's Nearest Gen Muon's mother=="<<nearestGenObj->motherRef()->pdgId()<<std::endl;
+    for(edm::View<pat::Muon>::const_iterator iVetoMuons = pVetoMuons->begin(); iVetoMuons != pVetoMuons->end(); ++iVetoMuons)
+    {
+      if(deltaR(*iMuon, *iVetoMuons) < 0.0001 && ( (iMuon->pt()-iVetoMuons->pt()) / iVetoMuons->pt() ) < 0.0001)
+        continue;
+      else if(deltaR(*iMuon, *iVetoMuons) < dRCut_)
+        continue;
+      else count++;
+    }//for iVetoMuons
 
+    if (count == pVetoMuons->size() )
+    {
       muonColl->push_back(*iMuon);
-      ++nPassingMuons;}
-  }
+      ++nPassingMuons;
+    }//if count
+  }//for iMuon
+
   iEvent.put(muonColl);
   return (nPassingMuons >= minNumObjsToPassFilter_);
 }
