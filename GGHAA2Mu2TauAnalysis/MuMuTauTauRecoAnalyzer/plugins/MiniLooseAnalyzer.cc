@@ -153,20 +153,20 @@ MiniLooseAnalyzer::MiniLooseAnalyzer(const edm::ParameterSet& iConfig):
 {
    //now do what ever initialization is needed
   edm::Service<TFileService> f;
-  sieiehisto = f->make<TH1D>("Sigmaietaieta" , "Sigmaietaieta_{EB}" , 100 , 0 , 0.05 );
-  HoverEhisto = f->make<TH1D>("H/E" , "H/E_(EB}" , 100 , 0 , 0.4 );
-  dPhiIn = f->make<TH1D>("dPhIn","#Delta_{PhiSuperClusterTrackAtVtx}EB",100,0,0.4);
-  Ooemoop =f->make<TH1D>("Ooemoop","#frac{1}{E} - #frac{1}{p}_{EB}",100,-.25,0.25);
+  sieiehisto = f->make<TH1D>("Sigmaietaieta" , "#Sigma_{i#etai#eta} for EB" , 1000 , 0 , 0.05 );
+  HoverEhisto = f->make<TH1D>("H/E" , "H/E for EB" , 1000 , 0 , 0.4 );
+  dPhiIn = f->make<TH1D>("dPhIn","#Delta_{#phiSuperClusterTrackAtVtx} for EB",100,0,0.4);
+  Ooemoop =f->make<TH1D>("Ooemoop","#frac{1}{E} - #frac{1}{p} for EB",1000,-.25,0.25);
   delEtaInSeed =f->make<TH1D>("dEtaInSeed","#delta_#etainseed_{EB}",100,-.01,.01);
-  PFIso =f->make<TH1D>("PFIso","EffecAreaPFIso_{EB}",100,0,0.1);
-  Pt1 =f->make<TH1D>("Pt1","Pt_{EB}",200,0,200);
-  sieiehisto2 = f->make<TH1D>("Sigmaietaieta2" , "Sigmaietaieta_{EE}" , 100 , 0 , 0.05 );
-  HoverEhisto2 = f->make<TH1D>("H/E" , "H/E_{EE}" , 100 , 0 , 0.4 );
-  dPhiIn2 = f->make<TH1D>("dPhIn2","#Delta_{PhiSuperClusterTrackAtVtx}EE",100,0,0.4);
-  Ooemoop2 =f->make<TH1D>("Ooemoop2","#frac{1}{E} - #frac{1}{p}_{EE}",100,-0.25,0.25);
-  delEtaInSeed2 =f->make<TH1D>("dEtaInSeed2","#delta_#etainseed_{EE}",100,-.01,.01);
-  PFIso2 =f->make<TH1D>("PFIso2","EffecAreaPFIso_{EE}",100,0,0.20);
-  Pt2=f->make<TH1D>("Pt2","Pt_{EE}",200,0,200);
+  PFIso =f->make<TH1D>("PFIso","EffecAreaPFIso_{EB}",1000,0,0.1);
+  Pt1 =f->make<TH1D>("Pt1","Pt_{EB}",2000,0,200);
+  sieiehisto2 = f->make<TH1D>("Sigmaietaieta2" , "#Sigma_{i#etai#eta} for EE" , 100, 0 , 0.05 );
+  HoverEhisto2 = f->make<TH1D>("H/E" , "H/E for EE" , 1000 , 0 , 0.4 );
+  dPhiIn2 = f->make<TH1D>("dPhIn2","#Delta_{#phiSuperClusterTrackAtVtx} for EE",100,0,0.4);
+  Ooemoop2 =f->make<TH1D>("Ooemoop2","#frac{1}{E} - #frac{1}{p} for EE",1000,-0.25,0.25);
+  delEtaInSeed2 =f->make<TH1D>("dEtaInSeed2","#delta_#etainseed for EE",100,-.01,.01);
+  PFIso2 =f->make<TH1D>("PFIso2","EffecAreaPFIso_{EE}",1000,0,0.20);
+  Pt2=f->make<TH1D>("Pt2","Pt_{EE}",2000,0,200);
   //cout<< "2" <<endl;
 }
 
@@ -256,21 +256,78 @@ MiniLooseAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	{
 	  // cout<< "3" <<endl;
 	  sieiehisto->Fill(iele->full5x5_sigmaIetaIeta());
-	   HoverEhisto->Fill(iele->hadronicOverEm());
+	  sieiehisto->SetFillColor(kBlue);
+	  sieiehisto->GetXaxis()->SetTitle("#sigma_{i#etai#eta} for EB");
+	  sieiehisto->GetYaxis()->SetTitle("# of events");
+
+	  HoverEhisto->Fill(iele->hadronicOverEm());
+	  HoverEhisto->SetFillColor(kAzure);
+	  HoverEhisto->GetXaxis()->SetTitle("#frac{H}{E} for EB");
+          HoverEhisto->GetYaxis()->SetTitle("# of events");
+
+
 	  dPhiIn->Fill(iele->deltaPhiSuperClusterTrackAtVtx());
-	  Ooemoop->Fill((double)GsfEleEInverseMinusPInverse(iele)); 
+	  dPhiIn->SetFillColor(kCyan+2);
+          dPhiIn->GetXaxis()->SetTitle("#Delta#Phi_{in} for EB");
+          dPhiIn->GetYaxis()->SetTitle("# of events");
+
+
+	  Ooemoop->Fill((double)GsfEleEInverseMinusPInverse(iele));
+	  Ooemoop->SetFillColor(kRed+4);
+          Ooemoop->GetXaxis()->SetTitle("#frac{1}{E}-#frac{1}{p} for EB");
+          Ooemoop->GetYaxis()->SetTitle("# of events");
+
+
+
+
 	  delEtaInSeed->Fill((double)dEtaInSeed(iele));
+	  delEtaInSeed->SetFillColor(kGreen);
+          delEtaInSeed->GetXaxis()->SetTitle("#Delta#eta_{inSeed} for EB");
+          delEtaInSeed->GetYaxis()->SetTitle("# of events");
+
+
+
 	  PFIso->Fill((GsfEleEffAreaPFIsoCut(iele,iEvent)));
 	  Pt1->Fill(iele->pt());
+	  //cout<<" "<<dEtaInSeed(iele)<<endl;;
+	  
 	}
       
       if(iele->isEE())
 	{
 	  sieiehisto2->Fill(iele->full5x5_sigmaIetaIeta());
+	  sieiehisto2->SetFillColor(kBlue+3);
+          sieiehisto2->GetXaxis()->SetTitle("#sigma_{i#etai#eta} for EE");
+          sieiehisto2->GetYaxis()->SetTitle("# of events");
+
 	  HoverEhisto2->Fill(iele->hadronicOverEm());
+	  HoverEhisto2->SetFillColor(kAzure+3);
+          HoverEhisto2->GetXaxis()->SetTitle("#frac{H}{E} for EE");
+          HoverEhisto2->GetYaxis()->SetTitle("# of events");
+
+
+
+  
 	  dPhiIn2->Fill(iele->deltaPhiSuperClusterTrackAtVtx());
+          dPhiIn2->SetFillColor(kCyan+4);
+          dPhiIn2->GetXaxis()->SetTitle("#Delta#Phi_{in} for EE");
+          dPhiIn2->GetYaxis()->SetTitle("# of events");
+
+
 	  Ooemoop2->Fill((double)GsfEleEInverseMinusPInverse(iele));
+	  Ooemoop->Fill((double)GsfEleEInverseMinusPInverse(iele));
+          Ooemoop->SetFillColor(kRed+3);
+          Ooemoop->GetXaxis()->SetTitle("#frac{1}{E}-#frac{1}{p} for EE");
+          Ooemoop->GetYaxis()->SetTitle("# of events");
+
+
 	  delEtaInSeed2->Fill((double)dEtaInSeed(iele));
+	  delEtaInSeed2->SetFillColor(kGreen+3);
+          delEtaInSeed2->GetXaxis()->SetTitle("#Delta#eta_{inSeed} for EE");
+          delEtaInSeed2->GetYaxis()->SetTitle("# of events");
+
+
+	  //cout<<" "<<dEtaInSeed(iele)<<endl;
 	  PFIso2->Fill((GsfEleEffAreaPFIsoCut(iele,iEvent)));
 	  Pt2->Fill(iele->pt());
 	  

@@ -17,8 +17,11 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
                             # replace 'myfile.root' with the source file you want to use
                             fileNames = cms.untracked.vstring(
-       # 'file:/afs/cern.ch/user/r/rhabibul/BoostedDiTau/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/python/VMass_Pt_selection.root'
-       'file:VMass_Pt_dR_selection_update.root')
+       #'file:/afs/cern.ch/user/r/rhabibul/BoostedDiTau/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/python/VMass_Pt_selection.root'
+       #'file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
+        "file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_19_dR_Test.root"
+        #'file:/afs/cern.ch/work/r/rhabibul/RootFiles/VMass_Pt_dR_selection.root'
+        )
                             
                             )
 
@@ -34,11 +37,12 @@ process.select = cms.EDAnalyzer("PrimaryAnalyzer",
                                 Ele_mass_select=cms.InputTag("demo","HighVmassElectron","Demo"),
                                 Tau_pt_select =cms.InputTag("demo","HighPtTaus","Demo"),
                                 Ele_pt_select =cms.InputTag("demo","HighPtElectrons","Demo"),
+                                #packed=cms.InputTag("demo","TaueleGenParticle","Demo"),
                               )
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('SelectionMassPtdRplotcut_update.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/mA_19_dR_result_a.root')
                                    )
 
 

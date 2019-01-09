@@ -1,4 +1,3 @@
-
 // -*- C++ -*-
 //
 // Package:    GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer
@@ -150,9 +149,9 @@ GenMassPlotter::GenMassPlotter(const edm::ParameterSet& iConfig):
   
   MvisibleGen =fl->make<TH1D>("MvisibleGen" , "Mass_{visible} of Gen Particles",100,-0.5,49.5);
   MinvariantGen=fl->make<TH1D>("MinvariantGen","Mass_{invariant} of Gen Particles",100,-0.5,49.5);
-  MvisibleGenTau=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles for Tau_{e},Tau_{had}",100,-0.5,49.5);
-  MvisibleGenTau2=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles involving Tau_{e},Tau_{e}",100,-0.5,49.5);
-  MvisibleGenTau3=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles involving Tau_{had},Tau_{had}",100,-0.5,49.5);
+  MvisibleGenTau=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles for Tau_{e},Tau_{had}",500,-0.5,49.5);
+  MvisibleGenTau2=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles involving Tau_{e},Tau_{e}",500,-0.5,49.5);
+  MvisibleGenTau3=fl->make<TH1D>("MvisibleGenTau","Mass_{visible} of Gen Particles involving Tau_{had},Tau_{had}",500,-0.5,49.5);
 
 
 
@@ -231,7 +230,8 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken(packedGenToken_, packed);
 
 
-  
+  //vector <unsigned int> CandInPlot;
+  vector<pat::PackedGenParticle*>Packed;
     
 
 //Invariant mass plot
@@ -251,7 +251,7 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      const GenParticleRef motherInPrunedCollectionRef=(*packed)[j].motherRef();
 	      if((motherInPrunedCollection != nullptr) && (isAncestor( PsuedoScalar , motherInPrunedCollection)))
 		{
-		  // cout << "     PdgID: " << (*packed)[j].pdgId() <<endl;
+		  //cout << "     PdgID: " << (*packed)[j].pdgId() <<endl;
 		  //cout<< " key: " << motherInPrunedCollectionRef.key()<<endl;
 		  //matchcount_ele++
 		  
@@ -260,7 +260,7 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		  //cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
 		  //cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
 		  //cout<<"Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->pdgId()<<endl;
-		  // cout<<"Grandmother key: "<<(*packed)[j].motherRef()->motherRef().key()<<endl;
+		  //cout<<"Grandmother key: "<<(*packed)[j].motherRef()->motherRef().key()<<endl;
 		  
 		  inv_v4 +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
 		}
@@ -291,45 +291,69 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         {
 	  TLorentzVector invariant_v4_Tau_e;
 	  TLorentzVector invariant_v4_Tau_had;
+	  TLorentzVector invariant_v4_Tau_mu;
           const Candidate * PsuedoScalar = &(*pruned)[i];
           //cout << "PdgID: " << PsuedoScalar->pdgId() <<endl;
 	  //cout << "found daugthers: "<< endl;
 	  //cout<<"PdgID: "<<(*pruned)[i].pdgId()<<endl;
-	  
+	  //int jid=0;
           for(size_t j=0; j<(packed.product())->size() ;j++)
             {
 	      
 	      
               const Candidate * motherInPrunedCollection = (*packed)[j].mother(0) ;
               const GenParticleRef motherInPrunedCollectionRef=(*packed)[j].motherRef();
+	      //pat::PackedGenParticleRef PackedRef(packed,jid);
+
 	      //Adding for Tau_e
-              if((motherInPrunedCollection != nullptr) && (isAncestor( PsuedoScalar , motherInPrunedCollection)) &&  (fabs((*packed)[j].pdgId())==11) && (fabs((motherInPrunedCollection->pdgId()))==15) && (motherInPrunedCollection->status()!=1) )
+	      
+		  
+		
+
+              if((motherInPrunedCollection != nullptr) && (isAncestor( PsuedoScalar , motherInPrunedCollection)) &&  /*(fabs((*packed)[j].pdgId())==11) && */ (fabs((motherInPrunedCollection->pdgId()))==15) && (motherInPrunedCollection->status()!=1) )
                 {
-                  cout << "Tau_e_PdgID: " << (*packed)[j].pdgId() <<endl;
+                  //cout << "Tau_e_PdgID: " << (*packed)[j].pdgId() <<endl;
 		  //cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
 		  //cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
 		  //cout<<"Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->pdgId()<<endl;
 		  //cout<<"Grandmother key: "<<(*packed)[j].motherRef()->motherRef().key()<<endl;
 		  //cout<<"Great-Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->mother(0)->pdgId()<<endl;
 		  //cout<<"Great-Grandmother key: "<<(*packed)[j].motherRef()->motherRef()->motherRef().key()<<endl;
+		  if( (fabs((*packed)[j].pdgId())==13) )
+		
 		  
-		  
-                  invariant_v4_Tau_e +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
-		  ++Tau_e_loop;
-		  //cout<<"X: "<<(*packed)[j].p4().X()<<endl;
-		  //cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
-		  //cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
-		  //cout<<"T: "<<(*packed)[j].p4().T()<<endl;
+		    {
+		      
+                      invariant_v4_Tau_mu +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
 
-		  
+
+		    
+		    }
+		 
+		  if((fabs((*packed)[j].pdgId())==11) && ((*packed)[j].statusFlags().isFirstCopy()) )
+                 
+		    {   
+		      // cout << "Tau_e_PdgID: " << (*packed)[j].pdgId() <<endl;
+		      
+		      
+		      invariant_v4_Tau_e +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
+		      ++Tau_e_loop;
+		      //cout << "Tau_e_PdgID: " << (*packed)[j].pdgId() <<endl;
+		      //cout<<"X: "<<(*packed)[j].p4().X()<<endl;
+		      //cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
+		      //cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
+		      //cout<<"T: "<<(*packed)[j].p4().T()<<endl;
+
+		    }
 		   
+		    
 		}
 	      
 	      //Adding for Tau_had
 	      /*Veto against ancestry of Muons and electrons
 		Veto against Muon and electron final products
 		Check for first copy of product
-		Veto against any Neutrino in fifinal product
+		Veto against any Neutrino in final product
 		Check for Tau somewhere in ancestry
 		Check for Pseudoscalars in start of ancestry
 	      */
@@ -345,34 +369,41 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		    
 		    {
 		      
-		      //cout<<"Tau_had_pdgID: "<<(*packed)[j].pdgId() <<endl;
-		      //cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
-		      //cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
+		      cout<<"Tau_had_pdgID: "<<(*packed)[j].pdgId() <<endl;
+		      cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
+		      cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
 		      //cout<<"Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->pdgId()<<endl;
 		      //cout<<"Grandmother key: "<<(*packed)[j].motherRef()->motherRef().key()<<endl;
 		      //cout<<"Great-Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->mother(0)->pdgId()<<endl;
 		      //cout<<"Great-Grandmother key: "<<(*packed)[j].motherRef()->motherRef()->motherRef().key()<<endl;
-
-		      invariant_v4_Tau_had +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
-		      ++Tau_had_loop;
+		      //CandInPlot.push_back(PackedRef.key());
+		      
+		      // if(std::find(Packed.begin(),Packed.end(),((*packed)[j]))!=Packed.end())
+		      std::vector<pat::PackedGenParticle*>::iterator check;
+		      check=std::find(Packed.begin(),Packed.end(),const_cast<pat::PackedGenParticle*>((*packed).ptrAt(j).get()));
+		      if(check==Packed.end())
+		      {
+			Packed.push_back(const_cast<pat::PackedGenParticle*>((*packed).ptrAt(j).get()));
+			invariant_v4_Tau_had +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
+		      
+			++Tau_had_loop;
 		      //invariant_v4_Tau_e +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
-		      //cout<<"X: "<<(*packed)[j].p4().X()<<endl;
-		      //cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
-		      //cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
-		      //cout<<"T: "<<(*packed)[j].p4().T()<<endl;
+		      cout<<"X: "<<(*packed)[j].p4().X()<<endl;
+		      cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
+		      cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
+		      cout<<"T: "<<(*packed)[j].p4().T()<<endl;
+		      }
  
 		      
-		      
-		      
+		      		      
 		      
 		    }
 		  
 		}
 	      
+	    
 	    }
-	  
-	  
-	  if ( invariant_v4_Tau_e.X()!=0 &&  invariant_v4_Tau_e.Y()!=0 &&  (invariant_v4_Tau_e.Z()!=0) &&  (invariant_v4_Tau_e.T()!=0) && (invariant_v4_Tau_e.Mag()>0) && (invariant_v4_Tau_had.X()!=0) && (invariant_v4_Tau_had.Y()!=0) && (invariant_v4_Tau_had.Z()!=0) && (invariant_v4_Tau_had.T()!=0) && (invariant_v4_Tau_had.Mag() >0))   	    
+	  if ( invariant_v4_Tau_e.X()!=0 &&  invariant_v4_Tau_e.Y()!=0 &&  (invariant_v4_Tau_e.Z()!=0) &&  (invariant_v4_Tau_e.T()!=0) && (invariant_v4_Tau_e.Mag()>0) && (invariant_v4_Tau_had.X()!=0) && (invariant_v4_Tau_had.Y()!=0) && (invariant_v4_Tau_had.Z()!=0) && (invariant_v4_Tau_had.T()!=0) && (invariant_v4_Tau_had.Mag() >0) && (invariant_v4_Tau_mu.X()==0) && (invariant_v4_Tau_mu.Y()==0) && (invariant_v4_Tau_mu.Z()==0) && (invariant_v4_Tau_mu.T()==0) && (invariant_v4_Tau_mu.Mag()==0) )   	    
 	    {MvisibleGenTau->Fill((invariant_v4_Tau_e+invariant_v4_Tau_had).Mag());
 	    
 	  //MinvariantGenTau->Fill((invariant_v4_Tau_had).M());
@@ -385,25 +416,25 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   
 	    }
 	  
-	  if ( invariant_v4_Tau_e.X()!=0 &&  invariant_v4_Tau_e.Y()!=0 &&  (invariant_v4_Tau_e.Z()!=0) &&  (invariant_v4_Tau_e.T()!=0) && (invariant_v4_Tau_e.Mag()>0) && (invariant_v4_Tau_had.X()==0) && (invariant_v4_Tau_had.Y()==0) && (invariant_v4_Tau_had.Z()==0) && (invariant_v4_Tau_had.T()==0) && (invariant_v4_Tau_had.Mag()==0))
+	  if ( invariant_v4_Tau_e.X()!=0 &&  invariant_v4_Tau_e.Y()!=0 &&  (invariant_v4_Tau_e.Z()!=0) &&  (invariant_v4_Tau_e.T()!=0) && (invariant_v4_Tau_e.Mag()>0) && (invariant_v4_Tau_had.X()==0) && (invariant_v4_Tau_had.Y()==0) && (invariant_v4_Tau_had.Z()==0) && (invariant_v4_Tau_had.T()==0) && (invariant_v4_Tau_had.Mag()==0) && (invariant_v4_Tau_mu.X()==0) && (invariant_v4_Tau_mu.Y()==0) && (invariant_v4_Tau_mu.Z()==0) && (invariant_v4_Tau_mu.T()==0) && (invariant_v4_Tau_mu.Mag()==0) )
 
 	    
 	    {
 	      MvisibleGenTau2->Fill((invariant_v4_Tau_e+invariant_v4_Tau_had).Mag());
 	      MvisibleGenTau2->SetFillColor(kAzure+6);
-	      MvisibleGenTau2->GetXaxis()->SetTitle("Mass_{visible} of Generator Particles in Tau_{e},Tau_{e} final state (Gev) ");
+	      MvisibleGenTau2->GetXaxis()->SetTitle("Mass_{visible} of Generator Particles in Tau_{e},Tau_{e} final state (Gev)");
 	      MvisibleGenTau2->GetYaxis()->SetTitle("# of events");
 	      ++tetefill;
 
 	    }
 	  
 
-	  if ( invariant_v4_Tau_e.X()==0 &&  invariant_v4_Tau_e.Y()==0 &&  (invariant_v4_Tau_e.Z()==0) &&  (invariant_v4_Tau_e.T()==0) && (invariant_v4_Tau_e.Mag()==0) && (invariant_v4_Tau_had.X()!=0) && (invariant_v4_Tau_had.Y()!=0) && (invariant_v4_Tau_had.Z()!=0) && (invariant_v4_Tau_had.T()!=0) && (invariant_v4_Tau_had.Mag()>0))
+	  if ( invariant_v4_Tau_e.X()==0 &&  invariant_v4_Tau_e.Y()==0 &&  (invariant_v4_Tau_e.Z()==0) &&  (invariant_v4_Tau_e.T()==0) && (invariant_v4_Tau_e.Mag()==0) && (invariant_v4_Tau_had.X()!=0) && (invariant_v4_Tau_had.Y()!=0) && (invariant_v4_Tau_had.Z()!=0) && (invariant_v4_Tau_had.T()!=0) && (invariant_v4_Tau_had.Mag()>0) && (invariant_v4_Tau_mu.X()==0) && (invariant_v4_Tau_mu.Y()==0) && (invariant_v4_Tau_mu.Z()==0) && (invariant_v4_Tau_mu.T()==0) && (invariant_v4_Tau_mu.Mag()==0) )
 
 	    {
-	      MvisibleGenTau3->Fill((invariant_v4_Tau_e+invariant_v4_Tau_had).Mag());
+	      MvisibleGenTau3->Fill((/*invariant_v4_Tau_e+*/invariant_v4_Tau_had).Mag());
               MvisibleGenTau3->SetFillColor(kBlue+3);
-              MvisibleGenTau3->GetXaxis()->SetTitle("Mass_{visible} of Generator Particles in Tau_{had},Tau_{had} final state (Gev) ");
+              MvisibleGenTau3->GetXaxis()->SetTitle("Mass_{visible} of Generator Particles in Tau_{had},Tau_{had} final state (Gev)");
               MvisibleGenTau3->GetYaxis()->SetTitle("# of events");
 	      ++ththfill;
 	      
@@ -413,7 +444,7 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 	    }
-
+	    
 	  
 	}
     }

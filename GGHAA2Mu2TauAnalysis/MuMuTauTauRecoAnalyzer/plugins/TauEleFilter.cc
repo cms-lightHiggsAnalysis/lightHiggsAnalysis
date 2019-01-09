@@ -6,8 +6,7 @@
 /**\class TauEleFilter TauEleFilter.cc GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/plugins/TauEleFilter.cc
 
  Description: [one line class summary]
-Selects Taus and electrons that pass all the cuts and then finds the best pair(based on maximum visible mass or the maximum DI object Pt) and puts them to new collections
- Implementation:
+Selects Taus and electrons that pass all the cuts and then finds the best pair(based on maximum visible mass or the maximum DI object Pt and puts them to new collections
      [Notes on implementation]
 */
 //
@@ -242,7 +241,7 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      
               cout<<"KeyEB_Tau:"<<inputTauRef.key()<<" KeyEB_ele:"<<inputElectronRef.key()<<endl;
 	      ++EBcount;
-	      if((dR < 0.8) && (dR>0.005))
+	      if((dR < 0.8))
 		{
 		  cout<<"Fill Histo_EB"<<endl;
 		  MatchedElectrons.push_back(*iele);
@@ -273,7 +272,7 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      
               cout<<"Key_EE_Tau:"<<inputTauRef.key()<<" Key_EE_ele:"<<inputElectronRef.key()<<endl;
 	      ++EEcount;
-	      if((dR < 0.8) && (dR > 0.005))
+	      if((dR < 0.8))
                 {
                   cout<<"Fill Histo_EE"<<endl;
 		  MatchedElectrons.push_back(*iele);

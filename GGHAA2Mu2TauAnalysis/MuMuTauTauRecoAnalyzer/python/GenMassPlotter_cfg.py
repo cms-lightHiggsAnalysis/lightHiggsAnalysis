@@ -1,10 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("Demo")
+process = cms.Process("Redo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = 'INFO'
-process.MessageLogger.categories.append('Demo')
+process.MessageLogger.categories.append('Redo')
 process.MessageLogger.cerr.INFO = cms.untracked.PSet(
     limit = cms.untracked.int32(-1)
     )
@@ -14,8 +14,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
                             # replace 'myfile.root' with the source file you want to use
-                            fileNames = cms.untracked.vstring(
-        'file:/afs/cern.ch/user/r/rhabibul/BoostedDiTau/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/test/fifth.root'
+                            fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
         )
                             )
 
@@ -27,12 +26,11 @@ process.demo = cms.EDAnalyzer("GenMassPlotter",
                               pruned  = cms.InputTag("prunedGenParticles"),
                               packed =cms.InputTag("packedGenParticles"),
                               
-                              
-                              )
+                                                            )
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('GenVisinvDmode2.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_Gen.root')
                                    )
 
 
