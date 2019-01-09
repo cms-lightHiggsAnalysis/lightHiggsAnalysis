@@ -1,34 +1,117 @@
-\section{Control regions\label{sec:controlregions}}
+\subsection{Application of scale factors\label{sec:controlregions}}
 
-Editor: Mengyao Shi
-Below is a list of content of what I want to talk about. 
-Our control region is defined as the following: 
+\Editor{Mengyao Shi}
+
+To validate the scale factors applied, we use Drell--region which contains well understood Z handle to make sure all corrections on MC are being applied correctly. 
+In addition, this control region is used to calculate the
+misidentified object efficiency described in Section~\ref{sec:fakes}.
+
+The selection sequence for the Drell--Yan control region is:
 \begin{itemize}
-  \item Muons pass a loose selection with pt$>$5GeV, $\abs\eta$ within 2.4
-  \item Muons pass medium ID. 
-  \item vertex requirements
-  \item Let event pass muon trigger, and select highest pt muon that passed trigger(Mu1)
-  \item among all isolated muons that are opposite sign to Mu1, we pick highest pt muon as Mu2.
-  \item invariant Mass window is set in Z region, 60GeV to 120GeV.
+    \item Trigger: \verb|HLT_IsoMu24_v* OR HLT_IsoTkMu24_v*|
+    \item Muons must pass \verb|isMediumMuon| with ICHEP 2016 recommended modifications
+    \item Select two opposite-sign isolated muons (delta beta corrected, $I_{rel} < 0.25$
+    \item Leading muon ($\Pgm_1$) $\pt > 25 \GeV$
+    \item Subleading muon ($\Pgm_2$) $\pt > 5 \GeV$
+    \item $60 < m(\Pgm_1, \Pgm_2) < 120 \GeV$
 \end{itemize}
 
-In order to improve modeling of data, we added additional corrections or scale factors to simulated events.
-reults \ref{fig:invMass}
+In addition to the analysis selections listed above,
+the standard assortment of MET filters are applied.
+This includes the bad PF muon filter developed specifically
+for the 2016 ReReco dataset.
+
+In general, the most up-to-date muon POG group recommended
+scale factors and corrections are applied to each event. 
 \begin{itemize}
-  \item muon identification scale factor
-  \item muon isolation scale factor
-  \item muon tracking efficiency
-  \item muon trigger efficiency
-  \item rochester correction
-  \item pile-up reweighting
-  \item generation level event weights
+    \item Single muon trigger efficiency~\cite{muonpog:efficiencies}
+    \item Muon identification and isolation efficiency
+    \begin{itemize}
+        \item POG values for $\pt > 20 \GeV$~\cite{muonpog:efficiencies}
+        \item Calculated from $J/\Psi$ for identification with $\pt < 10 \GeV$ (Section~\ref{sec:tagandprobe})
+    \end{itemize}
+    %\item Tracking efficiency~\cite{muonpog:tracking}
+    \item Rochester corrections for muon \pt~\cite{muonpog:rochester}
+    \item Pileup reweighting~\cite{lumipog:pileup}
+    \item Generator event weights
 \end{itemize}
 
-\begin{figure}
+Our MC is uniformly higher than data, but shape agrees quite well. Therefore we applied a scale factor 0.92 on MC when making our final plots. 
+The agreement between simulation and data after all corrections are applied
+can be seen in Figures~\ref{fig:drellyanleps}-\ref{fig:drellyanz}.
+
+% NOTE: this is all very standard and doesn't warrant detailed description unless we do something special
+% if you really want to include it, a lot of language editing is necessary
+
+
+%Muon identification scale factor: Remove fake muons is important for this control region study. 
+%fake muons can occur for example in hadronic decays, or hadron shower remnant in
+%the muon system that are reconstructed as a muon object.
+%Muon identification relies on tracker and muon system information, such as the number of pixel hits, the number of tracker
+%layers with hits, the muon segments reconstructed in the muon station, as well as quality
+%requirements on the muon track, such as the track chi-square, the number of muon chamber
+%hits in the track fit. However, muon identification has different efficiencies in data and MC,
+%scale factor is introduced as ratio of efficiency of data versus efficiency of MC.
+%This identification efficiencies was thoroughly studied by muon POG group on 2016 data,
+%which has been valuable contribution to our control region study.
+%Basically scale factors that is a function of pt, eta and LHC run era
+%is applied to each MC event and scaled up or down to target a better match of data.
+%
+%Muon isolation scale factor: Besides muon identification,
+%require muon to be isolated further more decrease chances that muon could be fake muons.
+%And muon POG group kindly provides this efficiency discrepancy between 2016 data and MC
+%for everyone who use muons in final states. Scale factors can be calculated by following equation.
+%\begin{equation}
+%SF_{ID and ISO}=SF_{ID/Tracker_track}*SF_{ISO/ID}
+%\end{equation}
+%
+%In above equation, $SF_{ID and ISO}$ is scale factor for both,
+%$SF_{ID/Tracker_track}$ is the identification SF, using as denominator muon tracker tracks; in the mean time, 
+%$SF_{ISO/ID}$ the isolation SF, using as denominator muon tracker tracks with the corresponding ID
+%selection applied.
+%
+%Similarly, muon tracking efficiency scale factor and muon trigger
+%efficiency scale factor was also applied to incorporate MC/data's difference.
+%
+%Rochester correction: This correction was developed to remove a bias
+%of the muon momentum from any detector misalignment or any possible error of the magnetic field.
+%Therefore while looping over all events, we apply Rochester correction based on knowledge of eta, pt, phi of muon. 
+%
+%Pileup reweighting: Production Monte Carlo samples are generated with distributions
+%for the number of pileup interactions. However this distribution does not exactly
+%match the conditions for each data-taking period. The final distribution for the number
+%of reconstructed primary vertices is sensitive to the details of the primary vertex
+%reconstruction and to differences in data versus MC. Therefore this difference need
+%to be taken care of. The approach is as following: Given a total inelastic cross section,
+%the average bunch instantaneous luminosity can be directly converted into the expected number
+%of interactions per crossing for this LumiSection. We used standard "pileupCalc" tool and by
+%feeding into collision json file together with recommended minbias cross section,
+%we could get an output of both MC and data. Taking the ratio of data and MC,
+%we could get pileup reweighting scale factor, and apply to each individual Monte Carlo event.  
+%
+%generation level event weights:
+
+\begin{figure}[htbp]
   \centering
-  \includegraphics[scale=.3]{figures/invMass of Mu1 Mu2.png}
-    \captionsetup{format=hang}
-  \caption{control region invariant mass plot}
-  \label{fig:invMass}
+  \subfloat[][$\PGm_{1}\ \pt$ ]{\includegraphics[width=0.4\textwidth]{figures/pt_of_Mu1.png}}
+  \subfloat[][$\PGm_{2}\ \pt$ ]{\includegraphics[width=0.4\textwidth]{figures/pt_of_Mu2.png}} \\ 
+  \subfloat[][$\PGm_{1}\ \eta$]{\includegraphics[width=0.4\textwidth]{figures/Eta_of_Mu1.png}}
+  \subfloat[][$\PGm_{2}\ \eta$]{\includegraphics[width=0.4\textwidth]{figures/Eta_of_Mu2.png}}
+  \caption{
+           Drell--Yan control region lepton kinematic variables.
+           }
+  \label{fig:drellyanleps}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \subfloat[][$m_{\PGm\PGm}$   ]{\includegraphics[width=0.4\textwidth]{figures/invMass_of_Mu1_Mu2.png}}
+  \subfloat[][$\DR(\PGm\PGm)$  ]{\includegraphics[width=0.4\textwidth]{figures/dRMu1Mu2Wider.png}} \\
+  \subfloat[][$\PZ\ \pt$ ]{\includegraphics[width=0.4\textwidth]{figures/Mu1Mu2Pt.png}}
+  \subfloat[][$\PZ\ \eta$]{\includegraphics[width=0.4\textwidth]{figures/Mu1Mu2Eta.png}}
+  \caption{
+           Drell--Yan control region di-muon kinematic variables.
+           }
+  \label{fig:drellyanz}
 \end{figure}
 
