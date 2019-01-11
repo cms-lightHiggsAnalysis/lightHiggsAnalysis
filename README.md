@@ -2,9 +2,9 @@
 
 This analysis repository is a search for a light higgs particle could potentially be found using Large Hadron Collider data collected by CERN. The following instruction is a guide to install this package on your working computer correctly. I will introduce function of specific packages after the instruction.
 
-- Go to https://github.com/cms-lightHiggsAnalysis/lightHiggsAnalysis.git and click "Fork" in the upper right-hand corner
+Go to https://github.com/cms-lightHiggsAnalysis/lightHiggsAnalysis.git and click "Fork" in the upper right-hand corner
 
-- Execute
+Execute:
 
 git clone https://github.com/cms-lightHiggsAnalysis/lightHiggsAnalysis.git
 
