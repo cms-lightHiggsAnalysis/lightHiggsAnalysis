@@ -8,7 +8,7 @@ Execute:
 
 git clone https://github.com/cms-lightHiggsAnalysis/lightHiggsAnalysis.git
 
-cp lightHiggsAnalysis/* .
+cp -r lightHiggsAnalysis/* .
 
 scram b -j16
 
