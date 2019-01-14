@@ -135,15 +135,15 @@ package has a separate readme https://github.com/MengyaoShi/lightHiggsAnalysis/b
 
 ## Workflow
 
-a) In $CMSSW_BASE/src/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
+a) In $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
 
-b) In $CMSSW_BASE/src/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
+b) In $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
 
-c) cd $CMSSW_BASE/src/CMSSW_8_0_30/src/CollectEXO/ 
+c) cd $CMSSW_BASE/src/CollectEXO/ 
 
 mkdir AllRootFiles
 
-Use $CMSSW_BASE/src/CMSSW_8_0_30/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
+Use $CMSSW_BASE/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
 
 It will look like, in CollectEXO/AllRootFiles
 
