@@ -143,7 +143,7 @@ c) cd $CMSSW_BASE/src/CMSSW_8_0_30/src/CollectEXO/
 
 mkdir AllRootFiles
 
-Use path_to_your_folder/CMSSW_8_0_30/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
+Use $CMSSW_BASE/src/CMSSW_8_0_30/src/CollectEXO/FindRootFiles.py to get collection of all .txt files that contains root file path of skimmed results.
 
 It will look like, in CollectEXO/AllRootFiles
 
@@ -205,4 +205,4 @@ d) In $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/QCDBackground, there is a Summary.sh
 
 .root files will contains histograms. Modify test_skimmed.py to include new plots.
 
-e) In StandardPlotFormat I use several simple scripts to stack all backgrounds together and compare with signal. Notice this is a temporary solution. In /CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/Plotting/test as mentioned in above sections, it's a non-temporary solution that's under development. 
+e) In StandardPlotFormat I use several simple scripts to stack all backgrounds together and compare with signal. Notice this is a temporary solution. In $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/Plotting/test as mentioned in above sections, it's a non-temporary solution that's under development. 
