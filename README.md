@@ -22,7 +22,7 @@ Contains our major analysis code
 
 ###SkimSequence folder
 
-https://github.com/MengyaoShi/lightHiggsAnalysis/blob/master/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/ is where our selection sequence developed. It can skim officially generated MC background down to order 10^-6 while keep most of signal.    
+GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/ is where our selection sequence developed. It can skim officially generated MC background down to order 10^-6 while keep most of signal.    
 
 
 And pleas notice, all the variables can be defined by user. 
