@@ -22,7 +22,7 @@ Contains our major analysis code
 
 ###SkimSequence folder
 
-GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/ is where our selection sequence developed. It can skim officially generated MC background down to order 10^-6 while keep most of signal.    
+$CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/ is where our selection sequence developed. It can skim officially generated MC background down to order 10^-6 while keep most of signal.    
 
 
 And pleas notice, all the variables can be defined by user. 
@@ -94,7 +94,7 @@ Specifically, change passDiscriminator from "False" to "True" will yield isolati
 
 Detailed information to get this piece of selection work: type
 
-cd <path_to_the_following_folder>/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/
+cd $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/
 
 cmsRun RegionBSkim.py
 
@@ -106,7 +106,7 @@ Contains analyzers targeting for analyze di-muon behavior.
 
 ### Plotting
 
-we have plotting scripts that can give us correctly normalized plots of stack of all background. How to use it is that you cd into src/GGHAA2Mu2TauAnalysis/TauAnalyzer/test
+we have plotting scripts that can give us correctly normalized plots of stack of all background. How to use it is that you cd into $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/TauAnalyzer/test
 
 and type into following command
 
@@ -135,11 +135,11 @@ package has a separate readme https://github.com/MengyaoShi/lightHiggsAnalysis/b
 
 ## Workflow
 
-a) In path_to_your_folder/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
+a) In $CMSSW_BASE/src/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence, define your selection sequence
 
-b) In path_to_your_folder/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
+b) In $CMSSW_BASE/src/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/crabConfig, define corresponding crab submission configuration file, and submit job to crab server.
 
-c) cd path_to_your_folder/CMSSW_8_0_30/src/CollectEXO/ 
+c) cd $CMSSW_BASE/src/CMSSW_8_0_30/src/CollectEXO/ 
 
 mkdir AllRootFiles
 
@@ -199,7 +199,7 @@ root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/mshi/TTJets_TuneCUETP8M1_
 
 170416_022149 is the crab submission job number.
 
-d) In /CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/QCDBackground, there is a Summary.sh
+d) In $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/QCDBackground, there is a Summary.sh
 
 ./Summary.sh, you will submit analysis of each background/signal in lxplus. Since we want plot on same physics measurement, for example pt of highest pt muon, missing energy, and so on, we run similar code on different backgrounds/signals, I wrote a template named test_skimmed.py that be fed into Summary.sh, and copy this python file 10 times and change a bit according to which backgrounds we analyze. In the end of Summary.sh, it submit jobs with all modified versions of analysis template using 'bsub', and start to analyze all backgrounds and signals. Wait until you get .root files, use "bjobs" to check status.
 
