@@ -10,7 +10,7 @@ git clone https://github.com/cms-lightHiggsAnalysis/lightHiggsAnalysis.git
 
 cp -r lightHiggsAnalysis/* .
 
-scram b -j16
+scram b -j 16
 
 ***********************************************************************
 
@@ -28,8 +28,6 @@ $CMSSW_BASE/src/GGHAA2Mu2TauAnalysis/SkimMuMuTauTau/test/SkimSequence/ is where 
 And pleas notice, all the variables can be defined by user. 
 
 di-mu isolation
-
-
 
 process.Isolate=cms.EDFilter('CustomDimuonSelector',
 
