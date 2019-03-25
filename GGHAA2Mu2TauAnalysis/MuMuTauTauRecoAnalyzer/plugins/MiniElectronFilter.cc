@@ -116,9 +116,10 @@ private:
   int EBcount= 0;
   int EEcount= 0;
   int Tcount= 0;
-  unsigned int EBpcount = 0;
-  unsigned int EEpcount = 0;
+  //unsigned int EBpcount = 0;
+  //unsigned int EEpcount = 0;
   unsigned int Passcount= 0;  
+  unsigned int PtCount =0;
   math::XYZPointF p1;
   math::XYZPoint p2;
   double dz;
@@ -257,15 +258,9 @@ double MiniElectronFilter::GsfEleConversionVetoCut(pat::ElectronCollection::cons
 bool MiniElectronFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace reco;
-  /*#ifdef THIS_IS_AN_EVENT_EXAMPLE
-  Handle<ExampleData> pIn;
-  iEvent.getByLabel("example",pIn);
-#endif
-
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-ESHandle<SetupData> pSetup;
-iSetup.get<SetupRecord>().get(pSetup);
-#endif*/
+  
+  unsigned int EBpcount = 0;                                                                                                                                                                                                                                                 
+  unsigned int EEpcount = 0;
   Handle<pat::ElectronCollection> electrons;
   iEvent.getByToken(electronSrc_,electrons);
   unique_ptr<pat::ElectronCollection> passedelectrons(new pat::ElectronCollection);
@@ -291,46 +286,52 @@ iSetup.get<SetupRecord>().get(pSetup);
 	}
       dz = abs(p1.z()-p2.z());
       dxy = sqrt((p1.x()-p2.x())*(p1.x()-p2.x()) + (p1.y()-p2.y())*(p1.y()-p2.y()));
-      // p2=Vertex->position();      
+       
       if( iele->isEB())	{++EBcount;
-	  //cout << "EBloop" <<endl;
+       
 	  
 	if( (iele->full5x5_sigmaIetaIeta()<0.011)  && (iele->hadronicOverEm()<0.289) && (abs(iele->deltaPhiSuperClusterTrackAtVtx()) <0.222) && (GsfEleEInverseMinusPInverseCut < 0.241) && (dEtaInSeedCut < 0.00477) && (GsfEleMissingHitsCut(iele) <= 1 ) && (GsfEleConversionVetoCut(iele,iEvent)) && (iele->pt()>7.0))
 	    {
 	      passedelectrons->push_back(*iele);
 	      
-	      cout<< "EBPushback" <<endl;
+	      //cout<< "EBPushback" <<endl;
 	      ++EBpcount;
 	    }
 	  
-	}
-      if(iele->isEE())
+      }
+      if(iele->isEE()){++EEcount;
 	
-	{++EEcount;
-	  //cout<<" EEloop " << endl;
-	  if((iele->full5x5_sigmaIetaIeta()<0.03) && (iele->hadronicOverEm()<0.101) && (abs(iele->deltaPhiSuperClusterTrackAtVtx()) <0.213) && (GsfEleEInverseMinusPInverseCut < 0.14) &&(dEtaInSeedCut <0.00868) && (GsfEleMissingHitsCut(iele) <= 1 ) && (GsfEleConversionVetoCut(iele,iEvent)) && (iele->pt()>7.0) )
 
-	    {
-
-
-	      passedelectrons->push_back(*iele);
-	      cout<< "EEPushback" <<endl;
-	      ++EEpcount;
-	    }
-
-	}
-
-
+	
+	//cout<<" EEloop " << endl;
+	if((iele->full5x5_sigmaIetaIeta()<0.03) && (iele->hadronicOverEm()<0.101) && (abs(iele->deltaPhiSuperClusterTrackAtVtx()) <0.213) && (GsfEleEInverseMinusPInverseCut < 0.14) &&(dEtaInSeedCut <0.00868) && (GsfEleMissingHitsCut(iele) <= 1 ) && (GsfEleConversionVetoCut(iele,iEvent)) && (iele->pt()>7.0) )
+	  
+	  {
+	    
+	    
+	    passedelectrons->push_back(*iele);
+	    //cout<< "EEPushback" <<endl;
+	    ++EEpcount;
+	  }
+	
+      }
+      
+      
     }
-
-
+  
+  
   iEvent.put(move(passedelectrons), "MiniLooseElectron");
-  cout<<"total "<< Tcount << " EBele " << EBcount << " EEele " << EEcount <<endl;
+  //cout<<"total "<< Tcount << " EBele " << EBcount << " EEele " << EEcount <<endl;
+ 
+  if (EBpcount!=0 || EEpcount !=0)
+    ++PtCount;
+  //cout<< " # of events having at least 1  Electron with pt > 7GeV: "<< PtCount <<endl;              
   if(Passcount < EBpcount + EEpcount)
-        return true;
+    return true;
   else return false;
-}
+  //cout<< " # of events having at least 1  Electron with pt > 7GeV: "<< PtCount <<endl;
 
+}
 // ------------ method called once each stream before processing any runs, lumis or events  ------------
 void
 MiniElectronFilter::beginStream(edm::StreamID)

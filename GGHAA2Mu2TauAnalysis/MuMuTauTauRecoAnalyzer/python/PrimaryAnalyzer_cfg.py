@@ -19,8 +19,9 @@ process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
        #'file:/afs/cern.ch/user/r/rhabibul/BoostedDiTau/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/python/VMass_Pt_selection.root'
        #'file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
-        "file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_19_dR_Test.root"
+        #"file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_19_dR_Test.root"
         #'file:/afs/cern.ch/work/r/rhabibul/RootFiles/VMass_Pt_dR_selection.root'
+        'file:/afs/cern.ch/work/r/rhabibul/Prospectus/Mass_input_11GeV_new_filtered.root' 
         )
                             
                             )
@@ -37,14 +38,16 @@ process.select = cms.EDAnalyzer("PrimaryAnalyzer",
                                 Ele_mass_select=cms.InputTag("demo","HighVmassElectron","Demo"),
                                 Tau_pt_select =cms.InputTag("demo","HighPtTaus","Demo"),
                                 Ele_pt_select =cms.InputTag("demo","HighPtElectrons","Demo"),
+                                Ele_dR_select=cms.InputTag("demo","dRElectrons","Demo"),
+                                Tau_dR_select=cms.InputTag("demo","dRTaus","Demo"),
+
                                 #packed=cms.InputTag("demo","TaueleGenParticle","Demo"),
                               )
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/mA_19_dR_result_a.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new_test.root"')
                                    )
-
 
 process.p = cms.Path(process.select)
 

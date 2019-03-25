@@ -94,7 +94,9 @@ class TauEleFilter : public edm::stream::EDFilter<> {
   edm::EDGetTokenT<reco::VertexCollection> vtx_;
   edm::EDGetTokenT<reco::BeamSpot> thebs_;
   edm::EDGetTokenT<reco::GenParticleCollection> particleSrcToken_;
-
+  unsigned int TauReg=0;
+  unsigned int TauMode=0;
+  unsigned int TauMed=0;
 
 };
 
@@ -118,10 +120,17 @@ TauEleFilter::TauEleFilter(const edm::ParameterSet& iConfig):
   //now do what ever initialization is needed
   produces<pat::ElectronCollection>("PassedElectron");
   produces<pat::TauCollection>("PassedTau");
+  produces<pat::ElectronCollection>("CutElectron");
+  produces<pat::TauCollection>("CutTaus");
+  produces<pat::ElectronCollection>("ReuseElectron");
+  produces<pat::TauCollection>("ReuseTaus");
+  
   produces<std::vector<pat::Electron>>("HighVmassElectron");
   produces<std::vector<pat::Tau>>("HighVmassTaus");
   produces<std::vector<pat::Electron>>("HighPtElectrons");
   produces<std::vector<pat::Tau>>("HighPtTaus");
+  produces<std::vector<pat::Electron>>("dRElectrons");
+  produces<std::vector<pat::Tau>>("dRTaus");
 }
 
 
@@ -148,14 +157,22 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   Handle<pat::ElectronCollection> electrons;
   iEvent.getByToken(electronSrc_,electrons);
   unique_ptr<pat::ElectronCollection> MatchElectrons(new pat::ElectronCollection);
+  unique_ptr<pat::ElectronCollection> TransElectrons(new pat::ElectronCollection);
+  unique_ptr<pat::ElectronCollection> RepeatElectrons(new pat::ElectronCollection);
   unique_ptr <vector<pat::Electron>>MassEle(new vector<pat::Electron>);                                                                                                                                                                                        
   unique_ptr <vector<pat::Electron>>PtEle(new vector<pat::Electron>);
+  unique_ptr <vector<pat::Electron>>dREle(new vector<pat::Electron>);
+
   Handle<pat::TauCollection> Taus;
   iEvent.getByToken(TauSrc_,Taus);
   unique_ptr<pat::TauCollection> MatchTaus(new pat::TauCollection);
+  unique_ptr<pat::TauCollection> TransTaus(new pat::TauCollection);
+  unique_ptr<pat::TauCollection> RepeatTaus(new pat::TauCollection);
+
   unique_ptr <vector<pat::Tau>>MassTau(new vector<pat::Tau>);
   unique_ptr <vector<pat::Tau>>PtTau(new vector<pat::Tau>);
-  
+  unique_ptr <vector<pat::Tau>>dRTau(new vector<pat::Tau>);
+
   Handle<reco::VertexCollection> Vertex;
   iEvent.getByToken(vtx_,Vertex);
   edm::Handle<reco::BeamSpot> thebs;
@@ -167,7 +184,8 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   Point p;
   p=pv.position();
   double dR=999999;
-  //double dR_m=999999;
+  double dR_m=999999;
+  double dR_m_min=999999;
   // double dR_p=999999;
   double Vmass=999999;                                                                                                                                                                                                                                                       
   double Vmax=0;
@@ -191,6 +209,9 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   unsigned int EBcount = 0;
   unsigned int EEcount = 0;
   unsigned int Passcount= 0;
+  unsigned int Taucount = 0;
+  unsigned int Modecount =0;
+  unsigned int Medcount =0;
   unsigned int int_ele=0;
   unsigned int int_tau=0;
   unsigned int int_ele_pt=0;
@@ -212,7 +233,7 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 	{
-
+	  ++Taucount;
 	  pat::Tau outputTau(*itau);
 	  pat::TauRef inputTauRef(Taus, tau_idx);
 
@@ -221,7 +242,15 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  dxy_tau=packedLeadTauCand->dxy(p);
 	  
 	  dR = reco::deltaR(*iele, *itau);
-          //Vmass=abs((iele->p4() + itau->p4()).mass());                                                                                                                                                                                                                       
+          //Vmass=abs((iele->p4() + itau->p4()).mass());
+	  if(itau->tauID("decayModeFinding"))
+	    {
+	      ++Modecount;
+	    }
+	  if(itau->tauID("byIsolationMVArun2v1DBoldDMwLTraw") > -0.5)
+	    {
+	      ++Medcount;
+	    }
           if( (itau->pt()>10) && abs((itau->eta())<2.3) && (itau->tauID("decayModeFinding")) && (itau->tauID("byIsolationMVArun2v1DBoldDMwLTraw") >-0.5) && (dxy_tau<0.2) && (dz_tau < 0.5) && (iele->isEB()) && (dxy_ele<0.05) &&(dxy_ele <0.10) )
             {
 
@@ -232,23 +261,23 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      MatchElectrons->push_back(*iele);
 	      //MatchedTaus.push_back(*itau);
 	      MatchTaus->push_back(*itau);
-	      //MatchedElectrons.push_back(*iele);
-	      //MatchedTaus.push_back(*itau);
-	      //PtElectrons.push_back(*iele);
-	      //PtTaus.push_back(*itau);
 	      
 	      
 	      
-              cout<<"KeyEB_Tau:"<<inputTauRef.key()<<" KeyEB_ele:"<<inputElectronRef.key()<<endl;
+              //cout<<"KeyEB_Tau:"<<inputTauRef.key()<<" KeyEB_ele:"<<inputElectronRef.key()<<endl;
 	      ++EBcount;
-	      if((dR < 0.8))
+	      if((dR < 0.8) && (dR> 0.05))
 		{
 		  cout<<"Fill Histo_EB"<<endl;
 		  MatchedElectrons.push_back(*iele);
 		  MatchedTaus.push_back(*itau);
 		  PtElectrons.push_back(*iele);
 		  PtTaus.push_back(*itau);
-		  
+		  TransElectrons->push_back(*iele);
+                  TransTaus->push_back(*itau);
+		  RepeatElectrons->push_back(*iele);
+                  RepeatTaus->push_back(*itau);
+
 		  
 		  
 		}
@@ -262,23 +291,22 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
               //DeltaR->Fill(dR);                                                                                                                                                                                                                                                            //DeltaR->SetFillColor(kRed);                                                                                                                                                                                                                                    
               TausAlreadyInPlot.push_back(inputTauRef.key());
               ElectronsAlreadyInPlot.push_back(inputElectronRef.key());
-              //MatchedElectrons.push_back(*iele);
-              //MatchedTaus.push_back(*itau);
 	      MatchElectrons->push_back(*iele);
               MatchTaus->push_back(*itau);
-	      //PtElectrons.push_back(*iele);
-	      //PtTaus.push_back(*itau);
-
 	      
-              cout<<"Key_EE_Tau:"<<inputTauRef.key()<<" Key_EE_ele:"<<inputElectronRef.key()<<endl;
 	      ++EEcount;
-	      if((dR < 0.8))
+	      if((dR < 0.8) && (dR > 0.05))
                 {
                   cout<<"Fill Histo_EE"<<endl;
 		  MatchedElectrons.push_back(*iele);
 		  MatchedTaus.push_back(*itau);
 		  PtElectrons.push_back(*iele);
 		  PtTaus.push_back(*itau);		
+		  TransElectrons->push_back(*iele);
+		  TransTaus->push_back(*itau);
+		  RepeatElectrons->push_back(*iele);
+                  RepeatTaus->push_back(*itau);
+
 		}
 
 	      
@@ -291,34 +319,68 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   
   
-  //Mass based Selection loop for Virtual mass
+  //dR  based Selection loop for Virtual mass
   for(unsigned i=0;i<MatchedElectrons.size();i++)
     {
       for(unsigned j=0;j<MatchedTaus.size();j++)
 	{
-	  //cout<<"PtEle: "<<(MatchedElectrons[i]).pt()<<endl;
-	  //cout<<"PtTau: "<<(MatchedTaus[j]).pt()<<endl;
-	  Vmass=abs(((MatchedElectrons[i]).p4() +(MatchedTaus[j]).p4()).mass());
-	  //dR_m=reco::deltaR((MatchedElectrons[i]).eta(),(MatchedElectrons[i]).phi(),(MatchedTaus[j]).eta(),(MatchedTaus[j]).phi());
-	  if ((Vmass > Vmax))
+	  
+	  // Vmass=abs(((MatchedElectrons[i]).p4() +(MatchedTaus[j]).p4()).mass());
+	  dR_m=reco::deltaR((MatchedElectrons[i]).eta(),(MatchedElectrons[i]).phi(),(MatchedTaus[i]).eta(),(MatchedTaus[i]).phi());
+	  //if ((Vmass > Vmax))-> Need to ask
+	  if ((dR_m < dR_m_min))
 	    {
-	      Vmax=Vmass;
-	      //MassEle->push_back(MatchedElectrons[i]);
-	      //MassTau->push_back(MatchedTaus[j]);
+	      //Vmax=Vmass;
+	      dR_m_min=dR_m;
 	      
-	      //cout<<" Pt_ele: "<<(MatchedElectrons[i]).pt()<<endl;
-	      //cout<<"Pt_tau"<<(MatchedTaus[j]).pt()<<endl;
+	      
 	      int_ele=i;
-	      int_tau=j;
+	      int_tau=i;
 	    }
 	  
 	  
 	}
       
       
-      
-      
     }
+
+  if((MatchedElectrons.size()>0) && (MatchedTaus.size()>0))
+    {
+      dREle->push_back(MatchedElectrons[int_ele]);
+      dRTau->push_back(MatchedTaus[int_tau]);
+    }
+
+
+
+
+
+
+
+
+
+  for(unsigned i=0;i<MatchedElectrons.size() && i<MatchedTaus.size();i++)                                                                                                                                                                                                                            
+    {                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                               
+          Vmass=abs(((MatchedElectrons[i]).p4() +(MatchedTaus[i]).p4()).mass());                                                                                                                                                                                            
+       
+          if ((Vmass > Vmax))                                                                                                                                                                                                                                 
+          
+            {                                                                                                                                                                                                                                                                  
+              Vmax=Vmass;                                                                                                                                                                                                                                                    
+	     
+                                                                                                                                                                                                                                                                               
+              int_ele=i;                                                                                                                                                                                                                                                       
+              int_tau=i;
+	    }
+	  
+    }
+  
+  
+  
+  
+
+
+
 
   if((MatchedElectrons.size()>0) && (MatchedTaus.size()>0))
     {
@@ -327,20 +389,19 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
   
   
-  
+  //Pt based selection loop for Virtual mass
   for(unsigned i=0;i<PtElectrons.size();i++)
     {
       for(unsigned j=0;j<PtTaus.size();j++)
 	{
-	  Pt_event=(((PtElectrons[i]).p4()+(PtTaus[j]).p4()).pt());
-	  //dR_p=reco::deltaR((PtElectrons[i]).eta(),(PtElectrons[i]).phi(),(PtTaus[j]).eta(),(PtTaus[j]).phi());
-	  
+	  Pt_event=(((PtElectrons[i]).p4()+(PtTaus[i]).p4()).pt());
+	 
 	  if(Ptmax<Pt_event)
 	    {
-	      Pt_event=Ptmax;
+	      Ptmax=Pt_event;
 	      
 	      int_ele_pt=i;
-	      int_tau_pt=j;
+	      int_tau_pt=i;
 	    }
 	}
       
@@ -356,18 +417,33 @@ TauEleFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   
   
-  
-  
-  
+  iEvent.put(move(RepeatElectrons), "ReuseElectron");
+  iEvent.put(move(RepeatTaus), "ReuseTaus");
+  iEvent.put(move(TransElectrons), "CutElectron");
+  iEvent.put(move(TransTaus), "CutTaus");
   iEvent.put(move(MatchElectrons), "PassedElectron");
   iEvent.put(move(MatchTaus), "PassedTau");
   iEvent.put(move(MassEle),"HighVmassElectron");
   iEvent.put(move(MassTau),"HighVmassTaus");
   iEvent.put(move(PtEle),"HighPtElectrons");
   iEvent.put(move(PtTau),"HighPtTaus");
-  
-  
-  
+  iEvent.put(move(dREle),"dRElectrons");
+  iEvent.put(move(dRTau),"dRTaus");
+
+
+
+
+ 
+  if (Taucount!=0)
+    ++TauReg;
+  if (Modecount!=0)
+    ++TauMode;
+  if (Medcount !=0)
+    ++TauMed;
+  cout<<"Event with Cleaned Taus " << TauReg <<endl;
+  cout<<"Event with DecayMode Passing Taus " << TauMode <<endl;
+  cout<<"Event with Med isolation Taus " << TauMed <<endl;
+
   if(Passcount < EBcount + EEcount)
     return true;
   else return false;

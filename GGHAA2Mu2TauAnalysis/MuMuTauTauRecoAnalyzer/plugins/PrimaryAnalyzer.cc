@@ -1,4 +1,4 @@
-// -*- C++ -*-
+// -*- C++ -*-  
 //
 // Package:    GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer
 // Class:      PrimaryAnalyzer
@@ -49,20 +49,31 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TLatex.h"
+#include "TAttFill.h"
 
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/PATObject.h"
 
 #include"DataFormats/PatCandidates/interface/Tau.h"
+
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 
 
-#include "TAttFill.h"
+
 #include "Math/VectorUtil.h"
 
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/Math/interface/deltaR.h"
+
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+
+#include "DataFormats/Math/interface/deltaR.h"
+
+
 
 
 typedef math::XYZPoint Point;
@@ -107,8 +118,13 @@ class PrimaryAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  
   edm::EDGetTokenT<pat::TauCollection> Tau_pt;
   edm::EDGetTokenT<pat::ElectronCollection> Ele_pt;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> >packedGenToken_;
+  edm::EDGetTokenT<pat::TauCollection> Tau_dR;
+  edm::EDGetTokenT<pat::ElectronCollection> Ele_dR;
+  edm::EDGetTokenT<pat::MuonCollection> MuonL_;
+  edm::EDGetTokenT<pat::MuonCollection> MuonT_;
 
-  // internal variables for gen matching
+ 
+ // internal variables for gen matching
   double maxDeltaR_;
 
 
@@ -122,10 +138,15 @@ class PrimaryAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  
   TH1D *Mvisiblecut;
   TH1D *VMassSelect;
   TH1D *PtSelect;
+  TH1D *dRSelect;
   TH1D *Pt;
   TH2F *Profile2;
   TH2F *Profile3;
   TH2F *Profile4;
+  TH1D *InvMass;
+
+
+
   //int match =0;
 };
 
@@ -153,8 +174,13 @@ PrimaryAnalyzer::PrimaryAnalyzer(const edm::ParameterSet& iConfig):
   Tau_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Tau_mass_select"))),
   Ele_(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("Ele_mass_select"))),
   Tau_pt(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Tau_pt_select"))),
-  Ele_pt(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("Ele_pt_select")))
-  //packedGenToken_ (consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packed")))
+  Ele_pt(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("Ele_pt_select"))),
+  Tau_dR(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Tau_dR_select"))),
+  Ele_dR(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("Ele_dR_select"))),
+  MuonL_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons1"))),
+  MuonT_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons2")))
+
+
   
 {
    //now do what ever initialization is needed
@@ -164,16 +190,20 @@ PrimaryAnalyzer::PrimaryAnalyzer(const edm::ParameterSet& iConfig):
    DeltaMatch =fl->make<TH1D>("DeltaMatch","#Delta_{R} High Pair ",1000,-0.05,0.95); 
    DeltaRcut = fl->make<TH1D>("DeltaRcut" , "#Delta_{R} after cut" , 1000 , -0.005 , 4.995 );
    Mvisible = fl->make<TH1D>("Mvisible" , "Mass_{visible}" , 100 ,-0.5 , 99.5 );
+   //Mvisible = fl->make<TH1D>("Mvisible" , "Mass_{visible}" , 30 ,0 ,2.0 );
+
    Mvisiblecut =fl->make<TH1D>("Mvisiblecut" , "Mass_{visible}_after cut" , 100 ,-0.5 , 99.5 );
    VMassSelect =fl->make<TH1D>("VMassSelect" , "Mass_{visible} from selected High mass Tau-Ele pair" , 100,-0.5 , 99.5 );
-   DeltaRele = fl->make<TH1F>("DeltaRele","DeltaR_{gen/ele}",100,-.005,0.045);
+   //DeltaRele = fl->make<TH1F>("DeltaRele","DeltaR_{gen/ele}",100,-.005,0.045);
    Profile =fl->make<TH2F>("Comparison","Plot of Mass_{visible} vs #DeltaR",1000,-.005,4.995,100,-0.5,499.5);
-   PtSelect=fl->make<TH1D>("PtSelect","Mass_{visible} from High Pt Tau-Ele pair",1000,-0.5,99.5);
+   PtSelect=fl->make<TH1D>("PtSelect","Mass_{visible} from High Pt Tau-Ele pair",100,-0.5,99.5);
+   dRSelect=fl->make<TH1D>("dRSelect","Mass_{visible} from lowest dR Tau-Ele pair",100,-0.5,99.5); 
    Pt=fl->make<TH1D>("Pt","Di-Object_{Pt} Ele-Tau",500,-0.5,499.5);
+   InvMass=fl->make<TH1D>("Invariant Mass","Invariant Mass of Dimuon Pair",100,-0.5,99.5);
    Profile2 =fl->make<TH2F>("Comparison2","Plot of Di-Object_{Pt} vs #DeltaR",1000,-.005,4.995,100,-0.5,499.5);
    Profile3 =fl->make<TH2F>("Comparison3","Plot of Di-Object_{Pt} vs Mass_{visibe}",100,-0.5,499.5,100,-0.5,499.5);
    Profile4 =fl->make<TH2F>("Comparison4","Plot of Di-Object_{Pt} vs Mass_{visibe} post #DletaR cut",100,-0.5,499.5,100,-0.5,499.5);
-
+   
 
 }
 
@@ -217,9 +247,15 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   iEvent.getByToken(Ele_pt,electron_p);
   edm::Handle<pat::TauCollection> tau_p;
   iEvent.getByToken(Tau_pt,tau_p);
-  //Handle<edm::View<pat::PackedGenParticle> > packed;
-  //iEvent.getByToken(packedGenToken_, packed);
-
+  edm::Handle<pat::ElectronCollection> electron_d;
+  iEvent.getByToken(Ele_dR,electron_d);
+  edm::Handle<pat::TauCollection> tau_d;
+  iEvent.getByToken(Tau_dR,tau_d);
+  Handle<pat::MuonCollection> Muons1;
+  iEvent.getByToken(MuonL_,Muons1);
+  
+  Handle<pat::MuonCollection> Muons2;
+  iEvent.getByToken(MuonT_,Muons2);
 
 
 
@@ -231,19 +267,15 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   double Vmass=999999;
   double Vmass_select=999999;
   double Pt_select=999999;
+  double dR_select=999999;
   double Pt_di=999999;
-  double Vmax=0;
-  // int countele=0;
-  //int counttau=0;
+  double Vmax;
   double dz_tau;
   double dxy_tau;
   double dz_ele;
   double dxy_ele;
-  //int size_ele= 0;
-  //int size_tau= 0;
   int nDoublect= 0;
-  //int n_EB_Doublect=0;
-  //int n_EE_Doublect=0;
+  double InvMassPair=99999;
 
   vector <unsigned int> TausAlreadyInPlot;
   vector <unsigned int> ElectronsAlreadyInPlot;
@@ -251,29 +283,37 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   // int tau_idx=0;
   int ele_idx =0;
   //double minPhi= 0.1;
-  double mindR=0.05;
-  //int counter=0;
-  //int match =0;
+  //double mindR=0.05;
+  
+
+
+  for(pat::MuonCollection::const_iterator iMu = Muons1->begin() ; iMu !=Muons1->end() ; ++iMu)
+
+    {
+     
+
+      for(pat::MuonCollection::const_iterator imu = Muons2->begin() ; imu !=Muons2->end() ; ++imu)
+
+        {
+         
+
+          //std::cout<< " Trailing Pt:  " << imu->pt() <<endl;                                                                                                                                                                                                                 
+          InvMassPair=abs((iMu->p4()+imu->p4()).mass());
+          InvMass->Fill(InvMassPair);
+          InvMass->SetFillColor(kGreen);
+          InvMass->GetXaxis()->SetTitle("m_{#mu#mu} (GeV)");
+          InvMass->GetYaxis()->SetTitle("# of events");
+	  
+        }
+
+
+
+    }
 
 
   for(pat::ElectronCollection::const_iterator iele = electron_h->begin() ; iele !=electron_h->end() ; ++iele)
     {
-      //++counter;
-
-      // for(size_t j=0; j<(packed.product())->size() ;j++) 
-      //{
-	  //cout<<"Pt: "<<(*packed)[j].pt()<<endl; 
-	  //float Delta_match = ROOT::Math::VectorUtil::DeltaR(iele->p4(),(*packed)[j].p4());
-	  //DeltaMatch->Fill(Delta_match);
-	  //DeltaMatch->SetFillColor(kSpring);
-	  //DeltaMatch->GetXaxis()->SetTitle("#DeltaR_{Match}");
-	  //DeltaMatch->GetYaxis()->SetTitle("# of events");
-
-
-
-	  //if(Delta_match <0.20) 
-	  //{
-	  //++match;
+      
 	      for(pat::TauCollection::const_iterator itau = tau_h->begin() ; itau !=tau_h->end() ; ++itau)
 		{
 		  //double deltaphi=deltaPhi(iele->phi(),itau->phi());
@@ -282,21 +322,56 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 		  DeltaMatch->SetFillColor(kSpring);                                                                                                                                                                                                                                 
 		  DeltaMatch->GetXaxis()->SetTitle("#Delta_{R} High Mass Pair");                                                                                                                                                                                                               
 		  DeltaMatch->GetYaxis()->SetTitle("# of events"); 
-		    if (delta_R > mindR)
-		      {
+		  //if (delta_R > mindR)
+		  //{
 		  Vmass_select=abs((iele->p4() + itau->p4()).mass());
-		  cout<<"Vmass: "<<Vmass_select<<endl;
+		  //cout<<"Vmass: "<<Vmass_select<<endl;
 		  //cout<<"Vmass Value: "<<Vmass_select<<endl;
 		  VMassSelect->Fill(Vmass_select);
 		  VMassSelect->SetFillColor(kOrange);
 		  VMassSelect->GetYaxis()->SetTitle(" # of events");
 		  VMassSelect->GetXaxis()->SetTitle(" M_{v} of reconstructed High mass Tau-ele Pair");
-		      }
+		  //  }
 		}
-	      //}
-	      //}
-		
+     	
     }
+
+
+  for(pat::ElectronCollection::const_iterator iele = electron_d->begin() ; iele !=electron_d->end() ; ++iele)
+    {
+      
+	      for(pat::TauCollection::const_iterator itau = tau_d->begin() ; itau !=tau_d->end() ; ++itau)
+		{
+		  //double deltaphi=deltaPhi(iele->phi(),itau->phi());
+		  //double delta_R=deltaR(*iele,*itau);
+		  //DeltaMatch->Fill(delta_R);                                                                                                                                                                                                                                     
+		  //DeltaMatch->SetFillColor(kSpring);                                                                                                                                                                                                                                 
+		  //DeltaMatch->GetXaxis()->SetTitle("#Delta_{R} High Mass Pair");                                                                                                                                                                                                               
+		  //DeltaMatch->GetYaxis()->SetTitle("# of events"); 
+		  //if (delta_R > mindR)
+		  //{
+		  dR_select=abs((iele->p4() + itau->p4()).mass());
+		  //cout<<"Vmass: "<<Vmass_select<<endl;
+		  //cout<<"Vmass Value: "<<Vmass_select<<endl;
+		  dRSelect->Fill(dR_select);
+		  dRSelect->SetFillColor(kRed);
+		  dRSelect->GetYaxis()->SetTitle(" # of events");
+		  dRSelect->GetXaxis()->SetTitle(" M_{v} of reconstructed Tau-ele Pair with lowest dR");
+		  //  }
+		}
+     	
+    }
+
+
+
+
+
+
+
+
+
+
+
   
 
 
@@ -304,17 +379,24 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     {
       //++counter;
 
-
+      //double delta_Rp=(*iele,*itau)
 
 
       for(pat::TauCollection::const_iterator itau = tau_p->begin() ; itau !=tau_p->end() ; ++itau)
 
 	{
+
+	  //double delta_Rp=deltaR(*iele,*itau);
+	  //if (delta_Rp > mindR)
+	  //{  
 	  Pt_select=abs((iele->p4() + itau->p4()).mass());
 	  PtSelect->Fill(Pt_select);
 	  PtSelect->SetFillColor(kBlue);
+	  PtSelect->GetYaxis()->SetTitle(" # of events");
+	  PtSelect->GetXaxis()->SetTitle(" M_{v} of reconstructed High Di-Object Pt Tau-ele Pair");
+  
+	  //}
 	}
-
 
     }
 
@@ -326,12 +408,12 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele,++ele_idx)
     {
       //size_ele=(electrons.product())->size();
-      if( iele->genLepton() ){
+      /*if( iele->genLepton() ){
 	     float DeltaRel = ROOT::Math::VectorUtil::DeltaR(iele->genLepton()->p4(), iele->p4());
        
            DeltaRele->Fill(DeltaRel);
 	   DeltaRele->SetFillColor(kBlue);
-      }
+      }*/
       //countele++;
       //double dRMax=5000;
       dz_ele=iele->gsfTrack()->dz(p);
@@ -348,26 +430,10 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	
 	{ 
 
-	  //for(size_t j=0; j<(packed.product())->size() ;j++)
-	  //{
-	      //cout<<"Pt: "<<(*packed)[j].pt()<<endl;
-	      //cout<<"eta: "<<(*packed)[j].eta()<<endl;
-	  //vector <unsigned int> TausAlreadyInPlot;
-	  	  // counttau++;	  
-	  // p=pv.position();
-	  // size_tau=(Taus.product())->size();
-
-	  //if (inputTauRef.key() found in TausAlreadyInPlot)
-	  //{nDoublect++;
-	  //}
+	  
 	  pat::Tau outputTau(*itau);
 	  pat::TauRef inputTauRef(Taus, tau_idx);
-	  //if ((inputTauRef.key()) found  in TausAlreadyInPlot)
-	  /*if(std::find(TausAlreadyInPlot.begin(), TausAlreadyInPlot.end(),(inputTauRef.key()))!= TausAlreadyInPlot.end()) 
-            {nDoublect++;
-	      cout<<"Works"<<endl;
-
-	      }*/
+	  
 	  
 
 	  
@@ -389,41 +455,46 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	      //Vmass=abs((iele->p4() + itau->p4()).mass());
 	      TausAlreadyInPlot.push_back(inputTauRef.key());
 	      ElectronsAlreadyInPlot.push_back(inputElectronRef.key());
-	      //cout<<"KeyEB_Tau:"<<inputTauRef.key()<<" KeyEB_ele:"<<inputElectronRef.key()<<endl;
-	      //TauElemap.insert (pair<int,int>(inputElectronRef.key(),inputTauRef.key()));
+	    
 	      Mvisible->Fill(Vmass);
-	      Pt->Fill(Pt_di);
+	      Mvisible->GetXaxis()->SetTitle("M_{v} before cut ");
+              Mvisible->GetYaxis()->SetTitle("# of events");
 
+	      Pt->Fill(Pt_di);
+	      
 	      
 	      Profile->Fill(dR,Vmass);
 	      Profile2->Fill(dR,Pt_di);
 	      Profile3->Fill(Vmass,Pt_di);
-	      if((dR < 0.8) && (dR>0.005))
+	      if((dR < 0.8) && (dR>0.05))
 		{
 		  Mvisiblecut->Fill(Vmass);
+		  if (Vmass>20)
+
+                    {
+                      cout<< " High Mass Point" << endl;
+                      cout<< "================"<<endl;
+                    }
+
+                  cout<<" Visible mass_EB : " << Vmass <<endl;
+
 		  DeltaRcut->Fill(dR);
-		  //TausAlreadyinPlot.Push_back(inputTauRef->key());
 		  Profile4->Fill(Vmass,Pt_di);
 		}
 	      if (Vmax<Vmass)
 		Vmax=Vmass;
-	      //if (size_ele==1 && (size_ele==size_tau))
-	      //continue;
+	      
 	    }
 	  if((itau->pt()>10) && abs((itau->eta())<2.3) && (itau->tauID("decayModeFinding")) && (itau->tauID("byIsolationMVArun2v1DBoldDMwLTraw") >-0.5) && (dxy_tau<0.2) && (dz_tau < 0.5) && (iele->isEE()) && (dxy_ele<0.10) &&(dz_ele <0.20) )
             {
-              //dR = reco::deltaR(*iele, *itau);
+	      
               DeltaR->Fill(dR);
 	      DeltaR->SetFillColor(kRed);
 	      DeltaR->GetXaxis()->SetTitle("#DeltaR");
 	      DeltaR->GetYaxis()->SetTitle("# of events");
 	      TausAlreadyInPlot.push_back(inputTauRef.key());
 	      ElectronsAlreadyInPlot.push_back(inputElectronRef.key());
-              //cout<<"Key_EE_Tau:"<<inputTauRef.key()<<" Key_EE_ele:"<<inputElectronRef.key()<<endl;
-
-	      //cout<<"KeyEE: "<<inputTauRef.key()<<endl;
-
-              //Vmass=abs((iele->p4() + itau->p4()).mass());
+             
               Mvisible->Fill(Vmass);
 	      Mvisible->SetFillColor(kYellow);
 	      
@@ -443,15 +514,24 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	      Profile2->GetXaxis()->SetTitle("#DeltaR");
 	      Profile2->SetOption("COLZ");
 	      
-	      Profile3->GetXaxis()->SetTitle("Mass_{visible}");
+	      Profile3->GetXaxis()->SetTitle("M_{v}");
 	      Profile3->GetYaxis()->SetTitle("Di-Object_{Pt}");
 	      Profile3->SetOption("COLZ");
 
-	      if((dR < 0.8) && (dR > 0.005))
+	      if((dR < 0.8) && (dR >0.05) )
 		{
 		  Mvisiblecut->Fill(Vmass);
+		  if (Vmass>20)
+
+		    {		    
+		      cout<< " High Mass Point" << endl;
+		      cout<< "================"<<endl;
+		    } 
+  
+		  cout<<" Visible mass_EE : " << Vmass <<endl;
+	   
 		  Mvisiblecut->SetFillColor(kYellow);
-		  Mvisiblecut->GetXaxis()->SetTitle("Mass_{visible} (Gev)");
+		  Mvisiblecut->GetXaxis()->SetTitle("M_{v} (Gev)");
 		  Mvisiblecut->GetYaxis()->SetTitle("# of events");
                   
 		  
@@ -466,38 +546,20 @@ PrimaryAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 		  Profile4->SetOption("COLZ");
 		}
 
-              //if (Vmax<Vmass)
-	      //Vmax=Vmass;
-	      //if (size_ele==1 && (size_ele==size_tau))
-	      //continue;
-	      
-
+             
             }
 	  
 	  
 	   
-	  //bool Doubleflag=false; 	
-
+	 
 	  if((std::find(TausAlreadyInPlot.begin(), TausAlreadyInPlot.end(),(inputTauRef.key()))!= TausAlreadyInPlot.end()) && (std::find(ElectronsAlreadyInPlot.begin(), ElectronsAlreadyInPlot.end(),(inputElectronRef.key()))!= ElectronsAlreadyInPlot.end()) )
 	{nDoublect++;
-	  // cout<<"Works"<<endl;
-	  //Doubleflag=true;
-	}
+	  	}
 	  
 	}
     }
   
-  //}
-  //cout<<"DobleCount: "<<nDoublect<<endl;
-  // cout<<"Counter: " <<counter<<endl;
-  // cout<<" "<<Vmax<<endl;
-  //cout<<"Size_ele "<<size_ele<<endl;
   
-  //cout<<"Size_tau "<<size_tau<<endl;
-
-  //cout<<"ele:"<<countele<<"tau:"<<counttau<<endl;
-  //cout<<"Match:"<<match<<endl;
- 
 }
 
 

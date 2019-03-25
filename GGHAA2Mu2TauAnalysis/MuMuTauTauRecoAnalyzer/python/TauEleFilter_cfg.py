@@ -16,7 +16,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1)
 process.source = cms.Source("PoolSource",
                             # replace 'myfile.root' with the source file you want to use
                             fileNames = cms.untracked.vstring(
-        'file:/afs/cern.ch/user/r/rhabibul/BoostedDiTau/CMSSW_8_0_30/src/GGHAA2Mu2TauAnalysis/MuMuTauTauRecoAnalyzer/test/fifth.root'
+        'file:/afs/cern.ch/work/r/rhabibul/Prospectus/Mass_input_11GeV_new_cleaned.root'
         )
                             )
 
@@ -37,7 +37,7 @@ process.demo = cms.EDFilter("TauEleFilter",
 
 # Configure the object that writes an output file                                                                                                                                                                                                                              
 process.out = cms.OutputModule("PoolOutputModule",
-                               fileName = cms.untracked.string("file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_19_dR_Test.root")
+                               fileName = cms.untracked.string("file:/afs/cern.ch/work/r/rhabibul/Prospectus/Mass_input_11GeV_new_filtered.root")
                                )
 
 
