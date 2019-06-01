@@ -58,7 +58,7 @@ class GenParticleAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResource
   bool isAncestor(const reco::Candidate * ancestor, const reco::Candidate * particle);
   bool isDaughter(const reco::Candidate * Daughter, const reco::Candidate * particle);
   bool isPdgMatch(const reco::Candidate * Ancestor, const reco::Candidate * particle, int Id);
-
+  bool isSpecificDaughter(const reco::Candidate * particle,int Id);
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -72,6 +72,8 @@ class GenParticleAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResource
   edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
   edm::EDGetTokenT<edm::View<pat::PackedGenParticle> >packedGenToken_;
   
+  int TaueTauhad=0;
+  int TaueTaue=0;
 };
 
 //
@@ -145,6 +147,18 @@ bool GenParticleAnalyzer::isPdgMatch(const reco::Candidate * ancestor, const rec
   return false;
 }
 
+bool GenParticleAnalyzer::isSpecificDaughter(const reco::Candidate * particle,int Id)
+{
+  if ((fabs(particle->pdgId())==Id))
+    return true;
+  for(size_t i=0;i <particle->numberOfDaughters();i++)
+    {
+      if(isSpecificDaughter(particle->daughter(i),Id)) return true;
+      
+    }
+  return false;
+}
+
 
 
 //
@@ -183,7 +197,7 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
       if(fabs((*pruned)[i].pdgId())==15)
 	{
 	  cout<<" Tau found " <<endl;
-	  cout << " pdgId: " << (*pruned)[i].pdgId() <<  " pt: " << (*pruned)[i].pt() << " eta: " << (*pruned)[i].eta() <<  " phi: " << (*pruned)[i].phi()<<endl;   
+	  //cout << " pdgId: " << (*pruned)[i].pdgId() <<  " pt: " << (*pruned)[i].pt() << " eta: " << (*pruned)[i].eta() <<  " phi: " << (*pruned)[i].phi()<<endl;   
 	  const Candidate * Tau = &(*pruned)[i];
 	  //check for a pseudscalar mother, then check for a electron daughter.
 	  //Look for an electron in the daughters, continue if there are any muons.
@@ -196,25 +210,89 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	      unsigned  n=Tau->numberOfDaughters();
 	      for ( size_t j =0; j < n ; j++)
 		
-		{	      const Candidate * Daughter=Tau->daughter(j);
-		  cout<< "Daughter No:" << j << " pdgId " << Daughter->pdgId() <<endl;
+		{	const Candidate * Daughter=Tau->daughter(j);
+		  cout<< " Daughter No: " << j << " pdgId " <<  Daughter->pdgId()  << "  Daughter Pt: " <<  Daughter->pt()  <<  " Daughter Eta: "  <<  Daughter->eta()  <<endl;
 		  if (fabs(Daughter->pdgId())==13)
 		    {  ++Tau_muCount;
-		  //continue;
-		  cout<<" Tau_mu found "<<endl;
+		      //continue;
+		      cout<<" Tau_mu found "<<endl;
 		    }
 		  //continue;
-		  if (fabs(Daughter->pdgId())==11)
+		  if ((fabs(Daughter->pdgId())==11))
 		    {
-		    ++Tau_eCount;
-		  cout<<" Tau_e found "<<endl;
+		      ++Tau_eCount;
+		      cout<<" Tau_e found "<<endl;
 		    }
-		  if(fabs(Daughter->pdgId()==111) || fabs(Daughter->pdgId()==211))
+		  //if((fabs(Daughter->pdgId())==111) || (fabs(Daughter->pdgId())==211) || (fabs(Daughter->pdgId())==311) || (fabs(Daughter->pdgId())==321) || (fabs(Daughter->pdgId())==130) || (fabs(Daughter->pdgId())==310))
+		  //if(fabs(Daughter->pdgId())==11)  
+		  if ((fabs(Daughter->pdgId())!=11) && (fabs(Daughter->pdgId())!=13) && (fabs(Daughter->pdgId())!=15) && (fabs(Daughter->pdgId())!=16) &&(fabs(Daughter->pdgId())!=22) &&(fabs(Daughter->pdgId())!=12) && (fabs(Daughter->pdgId())!=14) )
+		    
+		    
 		    {
-		    ++Tau_hadCount;
-		  cout<<"Tau_had found "<<endl;
-		  continue;
+		      ++Tau_hadCount;
+		      cout<<"Tau_had found "<<endl;
+		      //continue;
 		    }
+		  bool isElectron =false;
+		  bool isMuon =false;
+		  bool isHad= false;
+		  if(fabs(Daughter->pdgId())==15)
+		    {
+		      cout << " Tau from Tau "<<endl; 
+		      
+		      isElectron=isSpecificDaughter(Daughter,11);
+		      isMuon=isSpecificDaughter(Daughter,13);
+		      //isHad=isSpecificDaughter(Daughter,111) || isSpecificDaughter(Daughter,211) || isSpecificDaughter(Daughter,311) ||  isSpecificDaughter(Daughter,321) || isSpecificDaughter(Daughter,130) || isSpecificDaughter(Daughter,310) ;
+		      isHad=!isSpecificDaughter(Daughter,11) && !isSpecificDaughter(Daughter,13) && !isSpecificDaughter(Daughter,14) && !isSpecificDaughter(Daughter,12);
+		      if (isElectron)
+			{
+			  ++Tau_eCount;
+			  cout<< " electron Recover "<<endl;
+			}
+		      if(isMuon)
+			{
+			  cout<< "Muon Recover "<< endl;
+			  ++Tau_muCount;
+			}
+		      if(isHad)
+			{
+			  ++Tau_hadCount;
+			  cout<< " Had Recover "<<endl; 
+			  cout<<"#################### it actually worked ################ "<<endl;
+			}
+		      
+		      /* cout << " Tau from Tau "<<endl;
+		      unsigned N=Daughter->numberOfDaughters();
+		      for(size_t i=0; i <N ; i++)
+			{
+			  const Candidate * GrandDaughter=Daughter->daughter(i);
+			  if(fabs(GrandDaughter->pdgId())==11)
+			    {
+			      cout<< "Electron in GrandDaughter" <<endl;
+			      ++Tau_eCount;
+			      
+			    }
+			  if (fabs(GrandDaughter->pdgId())==13)
+			    {  ++Tau_muCount;
+			      //continue;                                                                                                                                                                                                                                              
+			      cout<<" Mu in GrandDaughter "<<endl;
+			    }
+
+			  if(fabs(GrandDaughter->pdgId()==111) || fabs(GrandDaughter->pdgId()==211))
+			    {
+			      ++Tau_hadCount;
+			      cout<<"Hadronic Products in GrandDaughter "<<endl;
+			      continue;
+			    }
+
+			}
+			
+		      */
+		    
+		    }
+
+		
+		
 		}
 	      //if (Tau_eCount == 2)
 	      //     if (fabs(Daughter->pdgId())==13)
@@ -227,8 +305,23 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   
   
   cout<< "Taus from Pseudoscalar :" << TauCount<<endl;
-  if (Tau_eCount==2)
-    cout<< "Tau_e Tau_e event" <<endl;
+  if (Tau_eCount==2 && Tau_muCount==0 && Tau_hadCount==0)
+    {   cout<< "Tau_e Tau_e event" <<endl;
+      ++TaueTaue;
+    }
+  if(Tau_muCount==2)
+    {
+      cout<< "Tau_mu Tau_mu event"<< endl;
+      
+    }
+  if(Tau_eCount==1 && Tau_muCount==0 && Tau_hadCount > 0)
+    {
+      cout<< "Tau_e Tau_had event"<<endl;
+      ++TaueTauhad;
+    }
+  
+  cout<< " Number of Tau_e Tau_had events : " << TaueTauhad<<endl;
+  cout<< " Number of Tau_e Tau_e events : " << TaueTaue<<endl;
   // #ifdef THIS_IS_AN_EVENT_EXAMPLE
   //    Handle<ExampleData> pIn;
   //    iEvent.getByLabel("example",pIn);

@@ -303,7 +303,8 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      
               const Candidate * motherInPrunedCollection = (*packed)[j].mother(0) ;
               const GenParticleRef motherInPrunedCollectionRef=(*packed)[j].motherRef();
-	      //pat::PackedGenParticleRef PackedRef(packed,jid);
+	      //pat::Packed
+	      //GenParticleRef PackedRef(packed,jid);
 
 	      //Adding for Tau_e
 	      
@@ -320,7 +321,7 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		  //cout<<"Great-Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->mother(0)->pdgId()<<endl;
 		  //cout<<"Great-Grandmother key: "<<(*packed)[j].motherRef()->motherRef()->motherRef().key()<<endl;
 		  if( (fabs((*packed)[j].pdgId())==13) )
-		
+		    		
 		  
 		    {
 		      
@@ -369,9 +370,9 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		    
 		    {
 		      
-		      cout<<"Tau_had_pdgID: "<<(*packed)[j].pdgId() <<endl;
-		      cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
-		      cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
+		      //cout<<"Tau_had_pdgID: "<<(*packed)[j].pdgId() <<endl;
+		      //cout<<"mother pdgID: " <<(*packed)[j].mother(0)->pdgId()<<endl;
+		      //cout<<"mother key: " <<(*packed)[j].motherRef().key()<<endl;
 		      //cout<<"Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->pdgId()<<endl;
 		      //cout<<"Grandmother key: "<<(*packed)[j].motherRef()->motherRef().key()<<endl;
 		      //cout<<"Great-Grandmother pdgID: "<<(*packed)[j].mother(0)->mother(0)->mother(0)->pdgId()<<endl;
@@ -388,10 +389,10 @@ GenMassPlotter::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 		      
 			++Tau_had_loop;
 		      //invariant_v4_Tau_e +=TLorentzVector((*packed)[j].p4().X(),(*packed)[j].p4().Y(),(*packed)[j].p4().Z(),(*packed)[j].p4().T());
-		      cout<<"X: "<<(*packed)[j].p4().X()<<endl;
-		      cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
-		      cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
-		      cout<<"T: "<<(*packed)[j].p4().T()<<endl;
+		      //cout<<"X: "<<(*packed)[j].p4().X()<<endl;
+		      //cout<<"Y: "<<(*packed)[j].p4().Y()<<endl;
+		      //cout<<"Z: "<<(*packed)[j].p4().Z()<<endl;
+		      //cout<<"T: "<<(*packed)[j].p4().T()<<endl;
 		      }
  
 		      

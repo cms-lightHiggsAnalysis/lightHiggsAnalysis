@@ -9,17 +9,17 @@ process.MessageLogger.cerr.INFO = cms.untracked.PSet(
     limit = cms.untracked.int32(-1)
     )
 
-#process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
                             # replace 'myfile.root' with the source file you want to use
                             fileNames = cms.untracked.vstring(#'file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
-                                                              'file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new_lowered.root'
+                                                              'file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new.root'
                                                               )
                             )
 
-process.demo = cms.EDAnalyzer("GenMassPlotter",
+process.demo = cms.EDFilter("GenModeFilter",
                               #electrons = cms.InputTag("Loose","MiniLooseElectron","USER"),
                               #Taus=cms.InputTag("slimmedTausElectronCleaned"),
                               #vertex=cms.InputTag("offlineSlimmedPrimaryVertices"),
@@ -31,7 +31,7 @@ process.demo = cms.EDAnalyzer("GenMassPlotter",
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/GenEventCount.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/GenEventCountTest.root')
                                    )
 
 
