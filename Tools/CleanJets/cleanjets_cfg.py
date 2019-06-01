@@ -18,14 +18,14 @@ process.load("Tools.CleanJets.cleanjets_cfi")
 # Declaring Input and configurations
 #######################################
 process.source = cms.Source("PoolSource",
-         fileNames = cms.untracked.vstring('root://eoscms//eos/cms/store/group/phys_higgs/HiggsExo/ktos/SingleMuon/DY_FakeRate_Inv81to101_Mu51_MedMuID_MultiTrig_JUL3_B_v3/170711_162219/0000/RegionB_selection_82.root')
+         fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIISummer16DR80Premix/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1/110000/001AC973-60E2-E611-B768-001E67586A2F.root')
 )
 
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(12) )
 
 
-process.CleanJets.outFileName = cms.string('/afs/cern.ch/user/k/ktos/GroupDir/CMSSW_8_0_17/src/Tools/CleanJets/BSUB/DIRNAME/CleanJets_Plots_NUM.root')
+process.CleanJets.outFileName = cms.string('/afs/cern.ch/user/r/rhabibul/CMSSW_8_0_17/src/Tools/CleanJets/Results/Jetcleaningplots/CleanJets_Plots_NUM.root')
 
 #######################################
 # HPS Tau Reconstruction alterations 

@@ -1,74 +1,64 @@
-\section{Analysis regions\label{sec:analysisregions}}
-Editor: Kyle Tos
+\section{Event selection\label{sec:analysisregions}}
+\Editor{Kyle Tos}
 
-For the events passing the $HLT_IsoMu24$ or $HLT_IsoTkMu24$ trigger, many selections are used to identify the important objects in the event to optimize the sensitivity to our signal. They include the di-$\mu$ and $\tau_{H}\tau_{\mu}$ objects, both of which come from the two light pseudoscalars, a(h). The series of cuts below can be thought of preselection, since they are applied to all samples in the four ABCD regions discussed in the section \ref{sec:fakes}. 
+For the events passing the \texttt{HLT\_IsoMu24} or \texttt{HLT\_IsoTkMu24} trigger, 
+the following selections are used to identify the important objects in the event
+to optimize the sensitivity to our signal.
+They include the dimuon and $\Pgtm\Pgth$ objects,
+both of which come from the two light pseudoscalars, $\Pga$.
+The selection below is defined as the \textit{preselection}.
+The \textit{preselection} is applied to all samples in the four ABCD regions discussed in the Section~\ref{sec:fakes}. 
 
+This analysis is designed to select the $\PH \rightarrow \Pgamm\Pgatt$ decay channel.
+The selected events are required to pass:
 \begin{itemize}
-  \item $\mu$ ID requirement
-  \item $\mu$ vertex requirements
-  \item $\mu$ relative Isolation requirements
-  \item $\mu$ pt requirements and $\eta$ requirements
-  \item di-$\mu$ opposite sign
-  \item di-$\mu$ $\Delta R$
-  \item Trigger fired by highest $p_{T} \mu$
-  \item Third $\mu$ $p_{T}$, $\eta$, ID, and $\Delta R$ requirements.
-  \item $\tau_{H}$ requirements on $p_{T}$, decay mode finding, isolation discriminant, $\eta$
-  \item Requirements on $\Delta R (\tau_{H}\mu_{3})$ and $\Delta R (\tau_{H}\mu_{1})$
-\end{itemize}
-
-
-Section($\mu$ Requirements). Events are required to pass the following requirements on the $\mu's$:
-
-\begin{itemize}
-  \item 2 $\mu's$ pass medium $\mu$ ID, which requires the following criteria:
-  \begin{itemize}  
-    \item Object is a Loose Muon (a ParticleFlow $\mu$, and a Global or Tracker $\mu$)
-    \item Have a fraction of valid tracker hits > .49
-    \item Global Muon with either a normalized global $\mu$ track chi-square < 3, passing Kink finder < 20, and Segment compatability > 0.303, or just a segment compatability > 0.451 %(NOTE: I cannot find a proper reference. For now, I'm using https://cds.cern.ch/record/2257968/files/DP2017_007.pdf)
+  \item Trigger: \verb|HLT_IsoMu24_v* OR HLT_IsoTkMu24_v*|
+  \item Dimuon selection
+  \begin{itemize}
+    \item Two opposite-sign muons
+    \item Leading isolated muon ($\Pgm_1$) $\pt > 26 \GeV$ and matched to the trigger
+    \item Subleading muon ($\Pgm_2$) $\pt > 3 \GeV$
+    \item $m(\Pgm_1, \Pgm_2) < 30 \GeV$
+    \item $\DR(\Pgm_1, \Pgm_2) < 1.0$
   \end{itemize}
-  \item Both $\mu's$ must be close the the PV, limited by requireing the $d_{xy} < .5$ and $d_{z} < 1.0$
-  \item Both $\mu's$ must have a relative isolation less than .25, where the relative isolation is defined as $\frac{charged hadron p_{T} + neutral hadron E_{T} + photon E_{T} - pileup p_{T}}{p_{T}(\mu)}$
-  \item Both $\mu's$ must have $|\eta| < 2.4$
+  \item Ditau selection
+  \begin{itemize}
+    \item Opposite-sign muon-tau pair
+    \item Muon ($\Pgtm$) $\pt > 3 \GeV$
+    \item Muon cleaned hadronic tau ($\Pgth$) $\pt > 10 \GeV$
+    \item $\DR(\Pgtm, \Pgth) < 0.8$
+  \end{itemize}
+  \item Cross-cleaning
+  \begin{itemize}
+    \item $\DR(\Pgm_1, \Pgtm) > 0.4$
+    \item $\DR(\Pgm_2, \Pgtm) > 0.4$
+    \item $\DR(\Pgm_1, \Pgth) > 0.8$
+    \item $\DR(\Pgm_2, \Pgth) > 0.8$
+  \end{itemize}
+  \item Veto event if \PGth jet passes CSVv2 Medium WP
 \end{itemize}
 
-The idea behind the medium $\mu$ ID is that it requires a loose or tight cut on segment compatibility, depending on if the $\mu$ passes good global $\mu$ criteria. %(NOTE: I cannot find a proper reference. For now, I'm using https://indico.cern.ch/event/373748/contributions/1794782/attachments/744452/1021208/leptonUpdatesTTH-160215.pdf)
-
-
-
-
-Section (Di-$\mu$ Requirements). There are additional requirements on the di-$\mu$ object. Requiring the $\Delta R$ removes much of the Drell-Yan, and the relatively high $p_{t}$ of the $\mu$ helps remove any soft $\mu$ production in QCD and $t\tilde{t}$.
-
+From this data set, events are further categorized into four regions
+base on $\Pgm_2$ and $\Pgth$ isolation.
 \begin{itemize}
-  \item 1 $\mu$ with $p_{T} > 25.0 GeV$.
-  \item 1 $\mu$ with $p_{T} > 5.0 GeV$, opposite sign charge as $\mu_{1}$, and within $\Delta R < 1.5$ of $\mu_{1}$. The value of $\Delta R$ is equal to $\sqrt{(\Delta\phi(\mu_{1}\mu_{2}))^{2} + (\Delta\eta(\mu_{1}\mu_{2}))^{2} }$, where eta is the pseudorapidity and phi is defined as the angle in the x-y plane of the detector. We label the highest $p_{T} \mu$ as $\mu_{1}$ and the lower $p_{T} \mu$ as $\mu_{2}$.
+    \item Region A: isolated $\Pgm_2$, isolated $\Pgth$
+    \item Region B: isolated $\Pgm_2$, anti-isolated $\Pgth$
+    \item Region C: anti-isolated $\Pgm_2$, isolated $\Pgth$
+    \item Region D: anti-isolated $\Pgm_2$, anti-isolated $\Pgth$
 \end{itemize}
+Region A will sometimes be referred to as the \textit{signal region}
+and region B will sometimes be referred to as the \textit{sideband}.
+These regions are used to estimate background contributions
+in the signal region through a data driven fakerate method.
+Regions C and D will be used to validate this method.
+Figure~\ref{fig:ABCD} shows a graphic of the regions and their definitions.
+This is described in more detail in Section~\ref{sec:fakes}.
 
-The highest $p_{T}$ $\mu$, defined above as $\mu_{1}$, is then matched to a $\mu$ that passed the trigger, $HLT_IsoMu24$ or $HLT_IsoTkMu24$. This is done with a $\Delta R < .2$.
-
-
-Section ($\mu_{3}$ Requirements). The next part of the selection are concerned with identifying the $\tau_{\mu}$. The $\Delta R$ requirement is there because we expect the two light pseudoscalar a(h)'s to be fairly separated, so their boosted and collimated decay products should also be separated. The requirements are as follows:
-
-\begin{itemize}  
-  \item $p_{T} > 5.0 GeV$
-  \item $|\eta| < 2.4$
-  \item $\Delta R(\mu_{1}\mu_{3}) > .5$ and $\Delta R(\mu_{1}\mu_{2}) > .5$. 
-  \item Pass Loose $\mu$ ID (a ParticleFlow $\mu$, and a Global or Tracker $\mu$)
-\end{itemize}
-
-The $\mu's$ that pass these requirements are then passed to the di-$\tau$ selection to look for a $\mu$ near a jet could be the seed of the $\tau$
-
- 
-Section ($\tau_{H}$ Requirements). There are requirements that we impose on the $\tau_{H}$ to see if it is a di-$\tau$ object. We specifically look for a 2$\tau$ object where one decays hadronically and one decays into a $\mu$. There are three neutrinos in the decay, but they only appear as missing transverse energy(MET). Due to the large mass difference between the h and the a, the decay products of the a will be highly collimated. This means that the $\tau_{\mu}$ will overlap with the $\tau_{H}$. Since taus are identified and reconstructed from jets, this boosting leads to poorer reconstruction due to the $\tau_{\mu}$ possibly being identified as a constituent of the jet. To imporve the efficiency of reconstruction the $\tau_{H}$, a so called cleaning is applied to jets before attempting to identify and reconstruct $]tau's$ from them.  First, the selection goes through the reconstructed jets and looks for $\mu's$ listed as consituents. Then the $\mu's$ are removed and the rest of the jet is saved. This is done to improve the identification of $\tau's$, since $\tau's$ are seeded by jets. The new collection of jets without $\mu's$ are the passed through the typical CMS reconstruction. 
-
-This is all done before our preselection. Here, the selection takes the $\tau's$ that are reconstructed from the jets without $\mu's$, and looks for $\mu's$ nearby (based on $\Delta R$). These $\tau's$ with a nearby $\mu$ will be the di-$\tau$ object in our signal. Below are the requirements placed on the $\tau_{H}$:
-
-
-\begin{itemize}  
-  \item $p_{T} > 20.0 GeV$
-  \item $|\eta| < 2.4$
-  \item $\Delta R(\tau_{H}\mu_{3}) < .8$. This is to look for the two collimated $\tau's$ that are our di-$\tau$ object.
-  \item $\Delta R(\tau_{H}\mu_{1}) > .5$ and $\Delta R(\tau_{H}\mu_{2}) > .5$. This ensure that the di-$\mu$ object and the di-$\tau$ object are well separated.
-  \item The $\tau$ must pass the tauID discriminator "decayModeFinding".
-  \item The $\tau$ must pass the tauID isolation discriminator "byMediumIsolationMVArun2v1DBoldDMwLT". 
-\end{itemize}
+\begin{figure}
+  \centering
+  \includegraphics[scale=.675]{figures/ABCD.png}
+    \captionsetup{format=hang}
+  \caption{Graphic depicting ABCD method.}
+  \label{fig:ABCD}
+\end{figure}
 
