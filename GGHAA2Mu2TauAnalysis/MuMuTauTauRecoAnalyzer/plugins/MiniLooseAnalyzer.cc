@@ -117,6 +117,7 @@ private:
   
 
   //Declare the histograms for the variables
+  TH1D * Pt;
   TH1D *sieiehisto;
   TH1D *HoverEhisto;
   TH1D *dPhiIn;
@@ -153,6 +154,7 @@ MiniLooseAnalyzer::MiniLooseAnalyzer(const edm::ParameterSet& iConfig):
 {
    //now do what ever initialization is needed
   edm::Service<TFileService> f;
+  Pt = f->make<TH1D>("Pt","Pt of Electron after Loose electron ID",200,-0.5,199.5);
   sieiehisto = f->make<TH1D>("Sigmaietaieta" , "#Sigma_{i#etai#eta} for EB" , 1000 , 0 , 0.05 );
   HoverEhisto = f->make<TH1D>("H/E" , "H/E for EB" , 1000 , 0 , 0.4 );
   dPhiIn = f->make<TH1D>("dPhIn","#Delta_{#phiSuperClusterTrackAtVtx} for EB",100,0,0.4);
@@ -252,6 +254,8 @@ MiniLooseAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   
   for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele) 
     {
+      
+      Pt->Fill(iele->pt());
       if(iele->isEB())
 	{
 	  // cout<< "3" <<endl;

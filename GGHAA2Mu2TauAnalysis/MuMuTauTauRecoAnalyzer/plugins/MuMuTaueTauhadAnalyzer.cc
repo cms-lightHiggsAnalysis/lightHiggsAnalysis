@@ -84,6 +84,10 @@ class MuMuTaueTauhadAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResou
    public:
       explicit MuMuTaueTauhadAnalyzer(const edm::ParameterSet&);
       ~MuMuTaueTauhadAnalyzer();
+  bool isSpecificDaughter(const reco::Candidate * particle,int Id);
+  double RefToDaughterPhi(const reco::Candidate * particle,int Id);
+  double RefToDaughterEta(const reco::Candidate * particle,int Id);
+  
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -106,13 +110,20 @@ class MuMuTaueTauhadAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResou
   edm::EDGetTokenT<pat::TauCollection> Tau_pt;
   edm::EDGetTokenT<pat::ElectronCollection> Ele_pt;
   
-  edm::EDGetTokenT<edm::View<pat::PackedGenParticle> >packedGenToken_;
+  //edm::EDGetTokenT<edm::View<pat::PackedGenParticle> >packedGenToken_;
   
   edm::EDGetTokenT<pat::TauCollection> Tau_dR;
   edm::EDGetTokenT<pat::ElectronCollection> Ele_dR;
   
   edm::EDGetTokenT<pat::MuonCollection> MuonL_;
   edm::EDGetTokenT<pat::MuonCollection> MuonT_;
+  
+  edm::EDGetTokenT<edm::View<reco::GenParticle> > prunedGenToken_;
+  edm::EDGetTokenT<edm::View<pat::PackedGenParticle> >packedGenToken_;
+
+  
+  
+  
   //Histograms
   TH1D *Mvisible;
   TH1D *Mvisiblecut;
@@ -120,8 +131,9 @@ class MuMuTaueTauhadAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResou
   TH1D *PtSelect;
   TH1D *dRSelect;
   TH1D *InvMass;
+  TH1D *PtTau;
+  TH1I *ModeDiffEvent;
  
-
   
 
 };
@@ -149,7 +161,9 @@ MuMuTaueTauhadAnalyzer::MuMuTaueTauhadAnalyzer(const edm::ParameterSet& iConfig)
   Tau_dR(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Tau_dR_select"))),
   Ele_dR(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("Ele_dR_select"))),
   MuonL_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons1"))),
-  MuonT_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons2")))
+  MuonT_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons2"))),
+  prunedGenToken_ (consumes<edm::View<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("pruned"))),
+  packedGenToken_ (consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packed")))
 
 
 
@@ -160,11 +174,13 @@ MuMuTaueTauhadAnalyzer::MuMuTaueTauhadAnalyzer(const edm::ParameterSet& iConfig)
    usesResource("TFileService");
    edm::Service<TFileService> fl;
    Mvisible = fl->make<TH1D>("Mvisible" , "Mass_{visible}" , 100 ,-0.5 , 99.5 );  
-   Mvisiblecut =fl->make<TH1D>("Mvisiblecut" , "Mass_{visible} after dR <0.05 and 0.8  cut" , 100 ,-0.5 , 99.5 );
+   Mvisiblecut =fl->make<TH1D>("Mvisiblecut" , "Mass_{visible} after dR > 0.05 and < 0.8  cut" , 100 ,-0.5 , 99.5 );
    VMassSelect =fl->make<TH1D>("VMassSelect" , "Mass_{visible} from selected High mass Tau-Ele pair" , 100,-0.5 , 99.5 );
    PtSelect=fl->make<TH1D>("PtSelect","Mass_{visible} from High Pt Tau-Ele pair",100,-0.5,99.5);
    dRSelect=fl->make<TH1D>("dRSelect","Mass_{visible} from lowest dR Tau-Ele pair",100,-0.5,99.5);
    InvMass=fl->make<TH1D>("Invariant Mass","Invariant Mass of Dimuon Pair",100,-0.5,99.5);
+   PtTau=fl->make<TH1D>("PtTau","Tau Pt for events passing all election with lowest dR criteria",150,0,150);
+   ModeDiffEvent =fl->make<TH1I>("ModeDiffEvent" , "Differentiating events on whether Tau/Ele is GenMatched" ,5 ,-0.5 ,4.5 );
 
 }
 
@@ -176,6 +192,49 @@ MuMuTaueTauhadAnalyzer::~MuMuTaueTauhadAnalyzer()
    // (e.g. close files, deallocate resources etc.)
 
 }
+
+bool MuMuTaueTauhadAnalyzer::isSpecificDaughter(const reco::Candidate * particle,int Id)
+{
+  if ((fabs(particle->pdgId())==Id))
+    return true;
+  for(size_t i=0;i <particle->numberOfDaughters();i++)
+    {
+      if(isSpecificDaughter(particle->daughter(i),Id)) return true;
+
+    }
+  return false;
+}
+double MuMuTaueTauhadAnalyzer::RefToDaughterPhi(const reco::Candidate * particle,int Id)
+{
+
+  double Phi=0;
+  if ((fabs(particle->pdgId())==Id))
+    return particle->phi();
+  for( size_t i=0;i <particle->numberOfDaughters();i++)
+    {
+      if(RefToDaughterPhi(particle->daughter(i),Id))
+        Phi=particle->daughter(i)->phi();
+
+    }
+  return Phi;
+}
+
+double MuMuTaueTauhadAnalyzer::RefToDaughterEta(const reco::Candidate * particle,int Id)
+{
+
+  double Eta=0;
+  if ((fabs(particle->pdgId())==Id))
+    return particle->eta();
+  for( size_t i=0;i <particle->numberOfDaughters();i++)
+    {
+      if(RefToDaughterEta(particle->daughter(i),Id))
+        Eta=particle->daughter(i)->eta();
+
+    }
+  return Eta;
+}
+
+
 
 
 //
@@ -217,8 +276,15 @@ MuMuTaueTauhadAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
    //DiMuon Peak
    Handle<pat::MuonCollection> Muons1;
    iEvent.getByToken(MuonL_,Muons1);
+   
    Handle<pat::MuonCollection> Muons2;
    iEvent.getByToken(MuonT_,Muons2);
+   
+   Handle<edm::View<reco::GenParticle> > pruned;
+   iEvent.getByToken(prunedGenToken_, pruned);
+
+   Handle<edm::View<pat::PackedGenParticle> > packed;
+   iEvent.getByToken(packedGenToken_, packed);
 
    double Vmass_select=99999;
    double Pt_select=99999;
@@ -226,6 +292,8 @@ MuMuTaueTauhadAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
    double InvMassPair=99999;
    double Vmass=99999;
    double VmassCut=99999;
+   
+
    //Visible mass before deltaR Cut
    for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele)
      {
@@ -318,15 +386,153 @@ MuMuTaueTauhadAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 	   dRSelect->SetFillColor(kRed);
 	   dRSelect->GetYaxis()->SetTitle(" # of events");
 	   dRSelect->GetXaxis()->SetTitle(" M_{v} of reconstructed Tau-ele Pair with lowest dR");
-
+	   PtTau->Fill(itau->pt());
 					  
 	 }					  
      }			  
+   bool ElecFound=false;
+   bool TauFound=false;
+   bool ElecDecay=false;
+   bool TauDecay=false;
+   bool dRTauMatch=false;
+   bool dREleMatch=false;
+   bool dRTauDecayMatch=false;
+   bool dREleDecayMatch=false;
+   int TauPassCount=0;
+   int ElePassCount=0;
+   for(size_t i=0; i<(pruned.product())->size() ;i++)
+     {
+       for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele)
+	 {
+	   for(pat::TauCollection::const_iterator itau = Taus->begin() ; itau !=Taus->end() ; ++itau)
+	     {
+	       if(fabs((*pruned)[i].pdgId())==15)
+		 {
+		   const Candidate * Tau = &(*pruned)[i];
+		   if (fabs(Tau->mother()->pdgId())==36)
+		     {
+		       const Candidate *PseudoTau = &(*pruned)[i];
+		       unsigned  n=PseudoTau->numberOfDaughters();
+		       for ( size_t j =0; j < n ; j++)
+			 {
+			   const Candidate * Daughter=PseudoTau->daughter(j);
+			  
+			   if ((fabs(Daughter->pdgId())==11))
+			     {
+
+			       //cout<<"Electron to match" <<endl;
+			       ElecFound=true;
+			     }
+			   if(ElecFound)
+			     {
+			       dREleMatch=(reco::deltaR(Daughter->eta(),Daughter->phi(),iele->eta(),iele->phi()) < 0.2);
+			     }
+			   if(dREleMatch)
+			     {
+			       ++ElePassCount;
+			     }
+			   if( (!TauFound) && (fabs(Daughter->pdgId())!=11) &&  (fabs(Daughter->pdgId())!=12) && (fabs(Daughter->pdgId())!=15) && (fabs(Daughter->pdgId())!=22) && (fabs(Daughter->pdgId())!=16)  )
+			     {
+			       //cout<<"possible Hadronic Tau" <<endl;
+			       //cout<<" pdgId: " <<  Tau->pdgId()  << "  Tau Pt: " <<  Tau->pt()  <<  " Tau Eta: "  <<  Tau->eta()  <<endl;                                                                                                                                    
+			       //cout<<" pdgId: " <<  Daughter->pdgId()  << "  Daughter Pt: " <<  Daughter->pt()  <<  " Daughter Eta: "  <<  Daughter->eta()  <<endl;
+			       TauFound=true;
+			     }
+			   if(TauFound)
+			     {
+			       dRTauMatch=(reco::deltaR(PseudoTau->eta(),PseudoTau->phi(),itau->eta(),itau->phi()) <0.2);
+			     }
+			   if(dRTauMatch)
+			     {
+			       ++TauPassCount;
+			     }
+			   bool isHad= false;
+			   bool isElectron =false;
+			   if(fabs(Daughter->pdgId())==15)
+			     {
+			       isHad=!isSpecificDaughter(Daughter,11) && !isSpecificDaughter(Daughter,12);
+			       isElectron=isSpecificDaughter(Daughter,11);
+			       if(/*!TauDecay &&*/ isHad)
+				 {
+				   //cout<< "####possible Decayed Hadronic Tau###" <<endl;
+				   //cout<<" pdgId: " <<  Tau->pdgId()  << "  Tau Pt: " <<  Tau->pt()  <<  " Tau Eta: "  <<  Tau->eta()  <<endl;                                                                                                                                
+				   TauDecay=true;
+				   //cout<<  " Daughter Eta: " << RefToDaughterEta(Daughter,11) <<endl;                                                                                                                                                                         
+				   //isHad=isSpecificDaughter(Daughter,111) || isSpecificDaughter(Daughter,211) || isSpecificDaughter(Daughter,311) ||  isSpecificDaughter(Daughter,321) || isSpecificDaughter(Daughter,130) || isSpecificDaughter(Daughter,310) ;              
+				 }
+			       if(TauDecay)
+				 {
+				   dRTauDecayMatch=(reco::deltaR(PseudoTau->eta(),PseudoTau->phi(),itau->eta(),itau->phi()) <0.2);
+				 }
+			       if(dRTauDecayMatch)
+				 {
+				   ++TauPassCount;
+				 }
+			       if(isElectron)
+				 {
+				   //cout<< "possible Tau decaying to Electron"<<endl;
+			       
+				   ElecDecay=true;
+				 }
+			       if(ElecDecay)
+				 {
+				   dREleDecayMatch=(reco::deltaR(RefToDaughterEta(Daughter,11),RefToDaughterPhi(Daughter,11),iele->eta(),iele->phi()) <0.2);
+				 }
+			       if(dREleDecayMatch)
+				 {
+				   ++ElePassCount;
+				 }
 
 
+			     
+			     
+			     
+			     
+			     }
+
+			 
+			 
+			 
+			 }
+		     
+		     
+		     
+		     }
+		 
+		 
+		 
+		 
+		 }
+	     
+	     
+	     
+	     
+	     
+	     
+	     
+	     }
+	   
+	 }
+     }
    
 
 
+   if((TauPassCount > 0) && (ElePassCount >0) /* && (TauFailCount==0) && (EleFailCount==0) */)
+     {
+       ModeDiffEvent->Fill(0);
+     }
+   if((TauPassCount==0) && (ElePassCount==0) /*&& (EleFailCount >0) && (TauFailCount > 0)*/)
+     {
+       ModeDiffEvent->Fill(3);
+     }
+   if((ElePassCount ==0) && (TauPassCount > 0) )
+     {
+       ModeDiffEvent->Fill(1);
+     }
+   if((TauPassCount== 0) && (ElePassCount > 0))
+     {
+       ModeDiffEvent->Fill(2);
+     }
 
 
 

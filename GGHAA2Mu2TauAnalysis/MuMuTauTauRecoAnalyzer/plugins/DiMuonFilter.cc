@@ -55,6 +55,12 @@
 #include "DataFormats/Math/interface/deltaR.h"
 #include "TLatex.h"
 
+#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
+
+#include"DataFormats/PatCandidates/interface/Tau.h"
+
 
 typedef math::XYZPoint Point;
 
@@ -85,6 +91,10 @@ class DiMuonFilter : public edm::stream::EDFilter<> {
   edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
   edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone> >triggerObjects_;
   edm::EDGetTokenT<pat::PackedTriggerPrescales> triggerPrescales_;
+  //edm::EDGetTokenT<pat::ElectronCollection> electronSrc_;
+  //edm::EDGetTokenT<pat::TauCollection> TauSrc_;
+
+
   //int Trigcount=0;
 };
 
@@ -105,7 +115,8 @@ DiMuonFilter::DiMuonFilter(const edm::ParameterSet& iConfig):
   triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("bits"))),
   triggerObjects_(consumes<std::vector<pat::TriggerObjectStandAlone> >(iConfig.getParameter<edm::InputTag>("objects"))),
   triggerPrescales_(consumes<pat::PackedTriggerPrescales>(iConfig.getParameter<edm::InputTag>("prescales")))
-  
+  //electronSrc_(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("electrons")))
+  //TauSrc_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Taus")))
 {
   produces<std::vector<pat::Muon>>("LeadingMuon");
   produces<std::vector<pat::Muon>>("TrailingMuon");
@@ -154,6 +165,13 @@ DiMuonFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
    Handle<pat::PackedTriggerPrescales> triggerPrescales;
    iEvent.getByToken(triggerPrescales_, triggerPrescales);
    
+   /*
+   Handle<pat::ElectronCollection> electrons;
+   iEvent.getByToken(electronSrc_,electrons);
+
+   Handle<pat::TauCollection> Taus;
+   iEvent.getByToken(TauSrc_,Taus);
+   */
 
 
 
@@ -161,6 +179,12 @@ DiMuonFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
    unique_ptr <vector<pat::Muon>>Trailingmu(new vector<pat::Muon>);
    vector<pat::Muon> SelectedMuons;
    vector<pat::TriggerObjectStandAlone> SelectedTrigObj;
+   /*
+   vector<pat::Electron> CheckElectrons;
+   vector<pat::Tau>CheckTaus;
+   */
+   //vector<pat::Muon> MaxCheck;
+   //vector<pat::Muon>SubCheck;
    double dR_Mu_Trig=99999;
    double dR_Trig_Cut=0.1;
    double Mu1_Pt_Cut=26.0;
@@ -328,22 +352,44 @@ DiMuonFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
        //std::cout<< " DeltaR: " <<dR_Mu_Trig<<std::endl;
        if((dR_Mu_Trig < dR_Trig_Cut) && (MaxMuon.pt() > Mu1_Pt_Cut) && (InvMass_Mu1Mu2 < InvMass_Cut))  
 	 {
-	   Leadingmu->push_back(MaxMuon);
-	   Trailingmu->push_back(SecondMuon);
+	   //std::vector<pat::Muon>::iterator MaxIt;
+	   //MaxIt=std::find(MaxCheck.begin(),MaxCheck.end(),);
+	   //if (MaxIt==MaxCheck.end())
+	   //{
+	       
+	       Leadingmu->push_back(MaxMuon);
+	       Trailingmu->push_back(SecondMuon);
+	       
+	       //MaxCheck.push_back(MaxMuon);
+	       
+	       //}
 	 }
-  
+       
        
      }
+   /*   for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele)
+     {
+       CheckElectrons.push_back(*iele);
+     }
+     
+       for(pat::TauCollection::const_iterator itau = Taus->begin() ; itau !=Taus->end() ; ++itau)
+
+	 {
+	   CheckTaus.push_back(*itau);
+	 }
+   */  
    bool Both=false;
-   Both=((Leadingmu->size() > 0) && (Trailingmu->size() >0));
-   //cout<<" Number of Muons: " <<MuonCount<<endl;
+   
+   Both=(((Leadingmu->size() > 0)) && ((Trailingmu->size()) > 0)  /*&&  ((CheckElectrons.size()) > 0) && ((CheckTaus.size()) > 0)*/ );
+   //cout<<" Number of Leading Muons: " << Leadingmu->size() <<endl;
+   //cout<<" Number of Trailng Muons: " << Trailingmu->size() <<endl;
    //cout<<" Events Passing Trigger "<<Trigcount<<endl;
    iEvent.put(move(Leadingmu), "LeadingMuon");
    iEvent.put(move(Trailingmu), "TrailingMuon");
    if(Both) 
-   return true;
+     return true;
    else
-   return false;
+     return false;
    
 }
 

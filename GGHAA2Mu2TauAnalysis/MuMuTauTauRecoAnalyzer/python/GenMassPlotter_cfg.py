@@ -14,8 +14,9 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
                             # replace 'myfile.root' with the source file you want to use
-                            fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
-        )
+                            fileNames = cms.untracked.vstring(#'file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_filtered.root'
+                                                              'file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new_lowered.root'
+                                                              )
                             )
 
 process.demo = cms.EDAnalyzer("GenMassPlotter",
@@ -30,7 +31,7 @@ process.demo = cms.EDAnalyzer("GenMassPlotter",
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/Prospectus/mA_11_Gen.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/GenEventCount.root')
                                    )
 
 

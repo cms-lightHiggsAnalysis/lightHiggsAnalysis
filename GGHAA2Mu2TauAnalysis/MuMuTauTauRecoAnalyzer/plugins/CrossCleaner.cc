@@ -135,6 +135,10 @@ CrossCleaner::CrossCleaner(const edm::ParameterSet& iConfig):
   produces<std::vector<pat::Tau>>("CrossCleanedHighMassTaus");
   produces<std::vector<pat::Muon>>("CrossCleanedLeadingMuon");
   produces<std::vector<pat::Muon>>("CrossCleanedTrailingMuon");
+  produces<std::vector<pat::Electron>>("CrossCleanedHighPtElectron");
+  produces<std::vector<pat::Tau>>("CrossCleanedHighPtTaus");
+  produces<std::vector<pat::Electron>>("CrossCleaneddRElectron");
+  produces<std::vector<pat::Tau>>("CrossCleaneddRTaus");
 
 }
 
@@ -162,31 +166,60 @@ CrossCleaner::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   using namespace reco;
   Handle<pat::ElectronCollection> electrons;
   iEvent.getByToken(electronSrc_,electrons);
+  
   unique_ptr <vector<pat::Electron>>CrossEle(new vector<pat::Electron>);
+  unique_ptr <vector<pat::Electron>>PtEle(new vector<pat::Electron>);
+  unique_ptr <vector<pat::Electron>>dREle(new vector<pat::Electron>);
   
   Handle<pat::TauCollection> Taus;
   iEvent.getByToken(TauSrc_,Taus);
+  
   unique_ptr <vector<pat::Tau>>CrossTau(new vector<pat::Tau>);
+  unique_ptr <vector<pat::Tau>>PtTau(new vector<pat::Tau>);
+  unique_ptr <vector<pat::Tau>>dRTau(new vector<pat::Tau>);
   
   Handle<pat::MuonCollection> Muons1;
   iEvent.getByToken(MuonL_,Muons1);
+  
   Handle<pat::MuonCollection> Muons2;
   iEvent.getByToken(MuonT_,Muons2);
+  
   unique_ptr <vector<pat::Muon>>CleanedLeadingmu(new vector<pat::Muon>);
   unique_ptr <vector<pat::Muon>>CleanedTrailingmu(new vector<pat::Muon>);
+  //unique_ptr<pat::MuonRefVector> MaxMuonRef(new pat::MuonRefVector);
+
   vector<pat::Electron> CleanedElectrons;
   vector<pat::Tau>CleanedTaus;
   
   double Vmass=999999;
   double Vmax= 0;
+  double Pt_event=999999;
+  double Ptmax=0;
+  double dR_m=999999;
+  double dR_m_min=999999;
+
   unsigned int int_ele=0;
   unsigned int int_tau=0;
+  
+  unsigned int pt_ele=0;
+  unsigned int pt_tau=0;
+  
+  unsigned int dR_ele=0;
+  unsigned int dR_tau=0;
+
   bool CleanedEvent=false;
   
+  int iMu_id=0;
+  
+  vector <unsigned int> MaxMuonCheck;
 
-  for(pat::MuonCollection::const_iterator iMu = Muons1->begin() ; iMu !=Muons1->end() ; ++iMu)
+
+  for(pat::MuonCollection::const_iterator iMu = Muons1->begin() ; iMu !=Muons1->end() ; ++iMu,++iMu_id)
     
     {
+      //pat::Muon outputMu(*Mu);
+      pat::MuonRef MaxRef(Muons1,iMu_id);
+      
       
       for(pat::MuonCollection::const_iterator imu = Muons2->begin() ; imu !=Muons2->end() ; ++imu)
 	
@@ -206,8 +239,19 @@ CrossCleaner::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		      {
 			CleanedElectrons.push_back(*iele);
 			CleanedTaus.push_back(*itau);
-			CleanedLeadingmu->push_back(*iMu);
-			CleanedTrailingmu->push_back(*imu);
+			
+			//check=std::find(Packed.begin(),Packed.end(),const_cast<pat::PackedGenParticle*>((*packed).ptrAt(j).get()));
+			vector<unsigned int>::iterator MaxCheck;
+			MaxCheck=std::find(MaxMuonCheck.begin(),MaxMuonCheck.end(),MaxRef.key());
+			if(MaxCheck==MaxMuonCheck.end())
+			  
+			  { // MaxMuonRef->push_back(MaxRef);
+			    MaxMuonCheck.push_back(MaxRef.key());
+			    CleanedLeadingmu->push_back(*iMu);
+			    CleanedTrailingmu->push_back(*imu);
+			
+			  }
+			//MaxMuonRef->push_back(MaxRef);
 			
 			
 		      }
@@ -222,7 +266,7 @@ CrossCleaner::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   
 
-  for(unsigned i=0;i<CleanedElectrons.size() && CleanedTaus.size();i++)                                                                                                                                                                                                     
+  for(unsigned i=0;i<CleanedElectrons.size() && i<CleanedTaus.size();i++)                                                                                                                                                                                                     
 
     { 
       Vmass=abs(((CleanedElectrons[i]).p4() +(CleanedTaus[i]).p4()).mass());
@@ -243,12 +287,71 @@ CrossCleaner::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     CrossEle->push_back(CleanedElectrons[int_ele]);
     CrossTau->push_back(CleanedTaus[int_tau]);
   }
+  
+
+  for(unsigned i=0;i<CleanedElectrons.size() && i<CleanedTaus.size();i++)
+
+    {
+      //Vmass=abs(((CleanedElectrons[i]).p4() +(CleanedTaus[i]).p4()).mass());
+      Pt_event=(((CleanedElectrons[i]).p4()+(CleanedTaus[i]).p4()).pt());
+
+      if (Ptmax<Pt_event)
+        {
+	  Ptmax=Pt_event;
+
+          pt_ele=i;
+	  pt_tau=i;
+
+        }
+
+
+    }
+  if((CleanedElectrons.size()>0) && (CleanedTaus.size()>0))
+
+    {
+      PtEle->push_back(CleanedElectrons[pt_ele]);
+      PtTau->push_back(CleanedTaus[pt_tau]);
+    }
+
+  for(unsigned i=0;i<CleanedElectrons.size() && CleanedTaus.size();i++)
+    {
+     
+      //Pt_event=(((PtElectrons[i]).p4()+(PtTaus[i]).p4()).pt());
+      dR_m=reco::deltaR((CleanedElectrons[i]).eta(),(CleanedElectrons[i]).phi(),(CleanedTaus[i]).eta(),(CleanedTaus[i]).phi());
+      if(dR_m < dR_m_min)
+	{
+	 
+	  dR_m_min=dR_m;
+	  
+	  dR_ele=i;
+	  dR_tau=i;
+	}
       
-  CleanedEvent= ((CrossEle->size() > 0) && (CrossTau->size() >0) && (CleanedLeadingmu->size() > 0) && (CleanedTrailingmu->size() > 0));
+      
+    }
+
+  if((CleanedElectrons.size()>0) && (CleanedTaus.size()>0))
+    {
+      dREle->push_back(CleanedElectrons[dR_ele]);
+      dRTau->push_back(CleanedTaus[dR_tau]);
+    }
+
+
+
+
+
+
+
+
+  CleanedEvent= ((dREle->size() > 0) && (dRTau->size() >0) && (CleanedLeadingmu->size() > 0) && (CleanedTrailingmu->size() > 0));
    
   
   iEvent.put(move(CrossEle), "CrossCleanedHighMassElectron");
   iEvent.put(move(CrossTau), "CrossCleanedHighMassTaus");
+  iEvent.put(move(dREle), "CrossCleaneddRElectron");
+  iEvent.put(move(dRTau), "CrossCleaneddRTaus");
+  iEvent.put(move(PtEle), "CrossCleanedHighPtElectron");
+  iEvent.put(move(PtTau), "CrossCleanedHighPtTaus");
   iEvent.put(move(CleanedLeadingmu),"CrossCleanedLeadingMuon");
   iEvent.put(move(CleanedTrailingmu),"CrossCleanedTrailingMuon");
   

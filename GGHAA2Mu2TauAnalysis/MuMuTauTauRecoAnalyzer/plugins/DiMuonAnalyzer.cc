@@ -57,6 +57,12 @@
 #include "DataFormats/Math/interface/deltaR.h"
 #include "TLatex.h"
 
+#include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
+
+#include"DataFormats/PatCandidates/interface/Tau.h"
+
 
 //
 // class declaration
@@ -85,7 +91,10 @@ class DiMuonAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   
   edm::EDGetTokenT<pat::MuonCollection> MuonL_;
   edm::EDGetTokenT<pat::MuonCollection> MuonT_;
-  
+  //edm::EDGetTokenT<pat::ElectronCollection> electronSrc_;
+  //edm::EDGetTokenT<pat::TauCollection> TauSrc_;
+
+
   
 
 
@@ -97,7 +106,7 @@ class DiMuonAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   TH1D *TrailingPt;
   //TH1D *TrigPt;
   TH1D *InvMass;
-
+  //TH1D *Mvisible;
 
 
 
@@ -117,6 +126,8 @@ class DiMuonAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 DiMuonAnalyzer::DiMuonAnalyzer(const edm::ParameterSet& iConfig):
   MuonL_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons1"))),
   MuonT_(consumes<pat::MuonCollection>(iConfig.getParameter<edm::InputTag>("Muons2")))
+  //electronSrc_(consumes<pat::ElectronCollection>(iConfig.getParameter<edm::InputTag>("electrons"))),
+  //TauSrc_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("Taus")))
  
 
 {
@@ -124,10 +135,11 @@ DiMuonAnalyzer::DiMuonAnalyzer(const edm::ParameterSet& iConfig):
    usesResource("TFileService");
    edm::Service<TFileService> fl;
  
-   LeadingPt = fl->make<TH1D>("LeadingPt" , "Pt of Leading Muon" , 150 , -0.5 , 149.5 );
+   LeadingPt = fl->make<TH1D>("LeadingPt" , "Pt of Leading Muon" , 150 , -0.5,149.5 );
    TrailingPt=fl->make<TH1D>("TrailingPt","Pt of Trailing or Sub Leading  Muon ",150,-0.5,149.5);
-   //TrigPt=fl->make<TH1D>("TriggerPt","Pt of Trigger Object",100,-0.5,99.5);
+   //TrigPt=fl->make<TH1D>("TriggerPt","Pt of Trigger Object",100,-0.5,99.5); 
    InvMass=fl->make<TH1D>("Invariant Mass","Invariant Mass of Dimuon Pair",100,-0.5,99.5);
+   //Mvisible = fl->make<TH1D>("Mvisible" , "Mass_{visible} after the DiMuon pair  selection and dR > 0.05 and < 0.8 cut"  , 100 ,-0.5 , 99.5 );
 
 }
 
@@ -157,9 +169,18 @@ DiMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   Handle<pat::MuonCollection> Muons1;
   iEvent.getByToken(MuonL_,Muons1);
+  
   Handle<pat::MuonCollection> Muons2;
   iEvent.getByToken(MuonT_,Muons2);
-
+  
+  /*
+  Handle<pat::ElectronCollection> electrons;
+  iEvent.getByToken(electronSrc_,electrons);
+  
+  Handle<pat::TauCollection> Taus;
+  iEvent.getByToken(TauSrc_,Taus);
+  */
+  //double Vmass=99999;
   for(pat::MuonCollection::const_iterator iMu = Muons1->begin() ; iMu !=Muons1->end() ; ++iMu)
 
     {
@@ -188,7 +209,24 @@ DiMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
     }
+  
+  /*for(pat::ElectronCollection::const_iterator iele = electrons->begin() ; iele !=electrons->end() ; ++iele)
+    {
+      for(pat::TauCollection::const_iterator itau = Taus->begin() ; itau !=Taus->end() ; ++itau)
 
+        {
+          Vmass=abs((iele->p4() + itau->p4()).mass());
+          Mvisible->Fill(Vmass);
+          Mvisible->SetFillColor(kYellow);
+
+          Mvisible->GetXaxis()->SetTitle("M_{v} after Primary Selection ");
+          Mvisible->GetYaxis()->SetTitle("# of events");
+
+
+        }
+    }
+
+  */
 }
 
 
