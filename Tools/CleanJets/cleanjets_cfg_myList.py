@@ -107,6 +107,5 @@ process.out = cms.OutputModule("PoolOutputModule",
 process.p = cms.Path(process.muonsRef*
                      process.CleanJets*
                      process.PFTau*
-	   	     process.pfBTagging)
+                          process.pfBTagging)
 process.e = cms.EndPath(process.out)
-

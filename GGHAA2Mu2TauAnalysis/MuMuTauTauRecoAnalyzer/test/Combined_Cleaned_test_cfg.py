@@ -18,8 +18,7 @@ process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 
 
 #Include the number of events to run over
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
 
 
 
@@ -32,11 +31,20 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 # Configure the object that reads the input file
 process.source = cms.Source("PoolSource", 
-                            fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new.root')
+                            fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/r/rhabibul/RootFiles/Mass_input_11GeV_new_lowered.root')
                             )
-
+process.GenModeFilter = cms.EDFilter("GenModeFilter",
+                              
+                                     pruned  = cms.InputTag("prunedGenParticles"),
+                                     packed =cms.InputTag("packedGenParticles"),
+)
+process.PrimaryMuonAnalyzer=cms.EDAnalyzer("PrimaryMuonAnalyzer",
+                               muonSrc =cms.InputTag("slimmedMuons"),
+                                                            )
+                                     
+                                     
 # Configure an object that produces a new data objec
-process.Loose = cms.EDFilter("MiniElectronFilter",
+process.LooseFilter = cms.EDFilter("MiniElectronFilter",
                                vertex = cms.InputTag("offlineSlimmedPrimaryVertices"),
                                Rho = cms.InputTag("fixedGridRhoFastjetAll"),
                                electrons = cms.InputTag("slimmedElectrons"),
@@ -44,9 +52,23 @@ process.Loose = cms.EDFilter("MiniElectronFilter",
                                BM = cms.InputTag("offlineBeamSpot")
                                #Tracks = cms.InputTag("electronGsfTracks"),
                              )
+process.ElectronAnalyzer = cms.EDAnalyzer("MiniLooseAnalyzer",
+                            electrons = cms.InputTag("LooseFilter","MiniLooseElectron","complete"),
+                              Rho = cms.InputTag("fixedGridRhoFastjetAll"),
 
-process.High = cms.EDFilter("TauEleFilter",
-                              electrons = cms.InputTag("Loose","MiniLooseElectron","complete"),
+)
+process.PrimaryElectronAnalyzer = cms.EDAnalyzer("PrimaryElectronAnalyzer",
+                                                 electrons = cms.InputTag("slimmedElectrons"),
+                                                 pruned  = cms.InputTag("prunedGenParticles"),
+                                                 packed =cms.InputTag("packedGenParticles"),
+
+)
+
+
+
+
+process.PairFilter = cms.EDFilter("TauEleFilter",
+                              electrons = cms.InputTag("LooseFilter","MiniLooseElectron","complete"),
                               Taus=cms.InputTag("slimmedTausElectronCleaned"),
                               #Taus=cms.InputTag("slimmedTaus"),
                               vertex=cms.InputTag("offlineSlimmedPrimaryVertices"),
@@ -55,62 +77,81 @@ process.High = cms.EDFilter("TauEleFilter",
 
 
                               )
-
-
-process.DiMuon= cms.EDFilter("DiMuonFilter",  
-                            vertex=cms.InputTag("offlineSlimmedPrimaryVertices"), 
-                            muonSrc =cms.InputTag("slimmedMuons"),
-                            bits = cms.InputTag("TriggerResults","","HLT"),
-                            prescales = cms.InputTag("patTrigger"),
-                            objects = cms.InputTag("selectedPatTrigger")
+process.PairAnalyzer = cms.EDAnalyzer("PostPrimarySelectionAnalyzer",
+                                 electrons = cms.InputTag("PairFilter","PassedElectron","complete"), 
+                                 Taus=cms.InputTag("PairFilter","PassedTau","complete"),
+                                 Cutelectrons = cms.InputTag("PairFilter","CutElectron","complete"),
+                                 CutTaus=cms.InputTag("PairFilter","CutTaus","complete")
+                                 
+                                 )
+process.PrimaryTauAnalyzer=cms.EDAnalyzer("PrimaryTauAnalyzer",
+                                          Taus=cms.InputTag("slimmedTausElectronCleaned"),
+                                          vertex=cms.InputTag("offlineSlimmedPrimaryVertices"),
+                                          
+                                          )
+process.DiMuFilter= cms.EDFilter("DiMuonFilter",  
+                             vertex=cms.InputTag("offlineSlimmedPrimaryVertices"), 
+                             muonSrc =cms.InputTag("slimmedMuons"),
+                             bits = cms.InputTag("TriggerResults","","HLT"),
+                             prescales = cms.InputTag("patTrigger"),
+                             objects = cms.InputTag("selectedPatTrigger"),
+                             #electrons = cms.InputTag("High","CutElectron","complete"),
+                             #Taus=cms.InputTag("High","CutTaus","complete")
 
                               )
 
-#process.CrossClean=cms.EDFilter("CrossCleaner",
-#                               electrons = cms.InputTag("High","PassedElectron","complete"),
-#                               Taus=cms.InputTag("High","PassedTau","complete"),
- #                              Muons1 = cms.InputTag("DiMuon","LeadingMuon","complete"),
-  #                             Muons2=cms.InputTag("DiMuon","TrailingMuon","complete"),
-   #                            Mu1TaudRCut=cms.double(0.8),
-    #                           Mu2TaudRCut=cms.double(0.8),
-     #                          Mu1EledRCut=cms.double(0.4),
-      #                         Mu2EledRCut=cms.double(0.4)
+
+process.DiMuAnalyzer = cms.EDAnalyzer("DiMuonAnalyzer",
+                                     Muons1 = cms.InputTag("DiMuFilter","LeadingMuon","complete"),
+                                     Muons2=cms.InputTag("DiMuFilter","TrailingMuon","complete"),
+                                     #electrons = cms.InputTag("High","CutElectron","complete"),
+                                     #Taus=cms.InputTag("High","CutTaus","complete"),
+                                     
+                                     #Taus=cms.InputTag("slimmedTaus"),                                                                                                                                                                                                            
+                                 )
+
+process.CrossCleanFilter=cms.EDFilter("CrossCleaner",
+                               electrons = cms.InputTag("PairFilter","CutElectron","complete"),
+                               Taus=cms.InputTag("PairFilter","CutTaus","complete"),
+                               Muons1 = cms.InputTag("DiMuFilter","LeadingMuon","complete"),
+                               Muons2=cms.InputTag("DiMuFilter","TrailingMuon","complete"),
+                               Mu1TaudRCut=cms.double(0.8),
+                               Mu2TaudRCut=cms.double(0.8),
+                               Mu1EledRCut=cms.double(0.4),
+                               Mu2EledRCut=cms.double(0.4)
 
 
-#)
-process.Analyze = cms.EDAnalyzer("PrimaryAnalyzer",
-                                 electrons = cms.InputTag("Loose","MiniLooseElectron","complete"),
-                                 Taus=cms.InputTag("slimmedTausElectronCleaned"),
-                                 #Taus=cms.InputTag("slimmedTaus"), 
-                                 vertex=cms.InputTag("offlineSlimmedPrimaryVertices"),
-                                 BM = cms.InputTag("offlineBeamSpot"),
-                                 particleSrc  = cms.InputTag("prunedGenParticles"),
-                                 #Tau_mass_select =cms.InputTag("CrossClean","CrossCleanedHighMassTaus","complete"),
-                                 Tau_mass_select =cms.InputTag("High","HighVmassTaus","complete"),
-                                 Ele_mass_select=cms.InputTag("High","HighVmassElectron","complete"),
-                                 Tau_pt_select =cms.InputTag("High","HighPtTaus","complete"),
-                                 Ele_pt_select =cms.InputTag("High","HighPtElectrons","complete"),
-                                 Ele_dR_select=cms.InputTag("High","dRElectrons","complete"),
-                                 Tau_dR_select=cms.InputTag("High","dRTaus","complete"),
-                                 #packed=cms.InputTag("demo","TaueleGenParticle","Demo"),
-                                 Muons1 = cms.InputTag("DiMuon","LeadingMuon","complete"),
-                                 Muons2=cms.InputTag("DiMuon","TrailingMuon","complete") 
+                                )
+process.FinalAnalyzer = cms.EDAnalyzer("MuMuTaueTauhadAnalyzer",
+                                 electrons = cms.InputTag("PairFilter","PassedElectron","complete"),
+                                 Taus=cms.InputTag("PairFilter","PassedTau","complete"),
+                                 Cutelectrons = cms.InputTag("PairFilter","ReuseElectron","complete"),
+                                 CutTaus=cms.InputTag("PairFilter","ReuseTaus","complete"),
+                                 Tau_mass_select =cms.InputTag("CrossCleanFilter","CrossCleanedHighMassTaus","complete"),
+                                 Ele_mass_select=cms.InputTag("CrossCleanFilter","CrossCleanedHighMassElectron","complete"),
+                                 Tau_pt_select =cms.InputTag("PairFilter","HighPtTaus","complete"),
+                                 Ele_pt_select =cms.InputTag("PairFilter","HighPtElectrons","complete"),
+                                 Ele_dR_select=cms.InputTag("PairFilter","dRElectrons","complete"),
+                                 Tau_dR_select=cms.InputTag("PairFilter","dRTaus","complete"),
+                                 Muons1 = cms.InputTag("CrossCleanFilter","CrossCleanedLeadingMuon","complete"),
+                                 Muons2=cms.InputTag("CrossCleanFilter","CrossCleanedTrailingMuon","complete"),
+
+                                #packed=cms.InputTag("demo","TaueleGenParticle","Demo"),
                                  )
 
 
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 
-# Configure the object that writes an output file
-#process.out = cms.OutputModule("PoolOutputModule",
-#                               fileName = cms.untracked.string("file:/afs/cern.ch/work/r/rhabibul/Prospectus/Combined.root")
-#                               )
+
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/Combined_11GeV_Cleaned_test_PreCleaned.root')
+                                   fileName = cms.string('file:/afs/cern.ch/work/r/rhabibul/RootFiles/Combined_11GeV_Analyzer_Gen_Elec.root')
                                    )
 
 
 
 # Configure a path and endpath to run the producer and output modules
-process.p = cms.Path(process.Loose*process.High*process.DiMuon*process.Analyze)
+#process.p = cms.Path(process.Loose*process.PairFilter*process.Primary*process.DiMuon*process.DiMuAnalyze*process.CrossClean*process.Analyze)
+#process.p = cms.Path(process.GenModeFilter*process.PrimaryMuonAnalyzer*process.DiMuFilter*process.DiMuAnalyzer*process.PrimaryElectronAnalyzer*process.LooseFilter*process.ElectronAnalyzer*process.PrimaryTauAnalyzer*process.PairFilter*process.PairAnalyzer*process.CrossCleanFilter*process.FinalAnalyzer)
+process.p = cms.Path(process.GenModeFilter*process.PrimaryMuonAnalyzer*process.DiMuFilter*process.DiMuAnalyzer*process.PrimaryElectronAnalyzer*process.LooseFilter*process.ElectronAnalyzer*process.PrimaryTauAnalyzer)
